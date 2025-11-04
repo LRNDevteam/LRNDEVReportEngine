@@ -27,4 +27,6 @@ public interface IImportFilesRepository
     Task<ReportDownloadSts> GetDownloadReportById(int fileId);
 
     Task<List<LabMaster>> GetLabMaster();
+
+    Task<ImportFilType> GetImportFileType(int fileTypeId);
 }

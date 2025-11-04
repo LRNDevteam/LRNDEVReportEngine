@@ -341,4 +341,15 @@ public class ImportFilesRepository : IImportFilesRepository
         return result.ToList();
     }
 
+    public async Task<ImportFilType> GetImportFileType(int fileTypeId)
+    {
+        const string query = "SELECT FileTypeId,FileTypeName,LabId,IsActive,SeqNo,TemplateFileName FROM ImportFilTypes Where FileTypeId = @FileTypeId";
+
+        using var connection = _context.CreateConnection();
+        // Use parameterized query to avoid SQL Injection
+        var result = await connection.QuerySingleOrDefaultAsync<ImportFilType>(query, new { FileTypeId = fileTypeId });
+
+        return result;
+    }
+
 }
