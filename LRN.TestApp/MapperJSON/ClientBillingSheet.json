@@ -1,6 +1,7 @@
 {
   "SheetName": "Billed to Phi (Prism Ran),Phi Paid (Prism Ran),Billed to Phi (Phi Ran),Phi Paid (Phi Ran)",
   "UseSheetName": true,
+  "AddSheetName": true,
   "TargetTable": "dbo.ClientBillingSheet",
   "Columns": [
     {

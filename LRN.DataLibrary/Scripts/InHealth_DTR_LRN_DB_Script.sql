@@ -1,4 +1,4 @@
-USE [InHealthLRN]
+USE [InHealthDTRLRN]
 GO
 /****** Object:  StoredProcedure [dbo].[SP_UpdatePanelDetail_Billing]******/
 DROP PROCEDURE [dbo].[SP_UpdatePanelDetail_Billing]
@@ -1811,7 +1811,7 @@ CREATE TABLE [dbo].[ClaimsLevelStatus](
 	[ClaimSubStatus] [nvarchar](50) NULL,
 	[FirstBillDate] [date] NULL,
 	[CreatedOn] [datetime] NULL,
-	[OrginalDenailCode] [nvarchar](50) NULL,
+	[OrginalDenailCode] [nvarchar](255) NULL,
 	[ICDCodes] [nvarchar](500) NULL,
 	[CPTWithUnits] [nvarchar](500) NULL,
 	[DenialPostedDate] [date] NULL,
@@ -2175,6 +2175,7 @@ CREATE TABLE [dbo].[ImportFilTypes](
 	[LabId] [int] NOT NULL,
 	[IsActive] [bit] NULL,
 	[SeqNo] [int] NULL,
+	[TemplateFileName] [nvarchar](255) NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[FileTypeId] ASC
@@ -4284,8 +4285,11 @@ BEGIN
         ClientStatus,
         VisitNumberIH [Billed - Inhealth AMD],
 		VisitNumberDTR [Billed - DTR AMD],
-		BillingSubStatus,
+		CASE WHEN BillingSubStatus = 'Billed Via DTR AMD' THEN 'DTR'
+		WHEN BillingSubStatus IN ('Billed Via DTR & IH AMD','Billed Via IH AMD') THEN 'InHealth'
+		ELSE 'UnBilled' END AS [Billed - InHealth & DTR],
         LIS.BillingStatus,
+		BillingSubStatus,
 		CONVERT(VARCHAR, LIS.FirstBilledDateIH, 101) [Billed Date-IH AMD],
 		CONVERT(VARCHAR, LIS.FirstBilledDateDTR, 101) [Billed Date-DTR AMD],
 		CONVERT(VARCHAR, LIS.ChargeEntryDateIH, 101) ChargeEntryDateIH,

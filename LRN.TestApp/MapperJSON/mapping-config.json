@@ -114,6 +114,46 @@
       "FileIdentifier": "Nexum Preprocessing - IH",
       "JsonMappingPath": "Nexus_Preprocessing_IHDTR.json",
       "FileType": 211
+    },
+    {
+      "FileIdentifier": "Bill Log by External Number Report",
+      "JsonMappingPath": "BillLogbyExternalNumberReport.json",
+      "FileType": 1802
+    },
+    {
+      "FileIdentifier": "Bill log by postdate report",
+      "JsonMappingPath": "BillLogByPostdateReport.json",
+      "FileType": 1803
+    },
+    {
+      "FileIdentifier": "Bill Log by Date of Service",
+      "JsonMappingPath": "BillLogbyDateofService.json",
+      "FileType": 1804
+    },
+    {
+      "FileIdentifier": "Payment Log by Patient Report",
+      "JsonMappingPath": "PaymentLogbyPatientReport.json",
+      "FileType": 1805
+    },
+    {
+      "FileIdentifier": "Adjustment Log By Date of Service",
+      "JsonMappingPath": "AdjustmentLogByDateofService.json",
+      "FileType": 1806
+    },
+    {
+      "FileIdentifier": "Insurance Aging by Date of Service",
+      "JsonMappingPath": "InsuranceAgingbyDateofService.json",
+      "FileType": 1807
+    },
+    {
+      "FileIdentifier": "Patient Aging by Date of Service",
+      "JsonMappingPath": "PatientAgingbyDateofService.json",
+      "FileType": 1808
+    },
+    {
+      "FileIdentifier": "Rejected Claims",
+      "JsonMappingPath": "RejectedClaims.json",
+      "FileType": 1809
     }
   ]
 }
