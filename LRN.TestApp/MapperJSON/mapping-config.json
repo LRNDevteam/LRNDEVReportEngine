@@ -154,6 +154,26 @@
       "FileIdentifier": "Rejected Claims",
       "JsonMappingPath": "RejectedClaims.json",
       "FileType": 1809
+    },
+    {
+      "FileIdentifier": "Bill_Report_By_Collection_Date",
+      "JsonMappingPath": "BillByCollectionDate.json",
+      "FileType": 1810
+    },
+    {
+      "FileIdentifier": "Bill_Report_by_Received_Date",
+      "JsonMappingPath": "BillByReceiveDate.json",
+      "FileType": 1811
+    },
+    {
+      "FileIdentifier": "Result_Report_by_Collection_Date",
+      "JsonMappingPath": "ResultByCollectionDate.json",
+      "FileType": 1812
+    },
+    {
+      "FileIdentifier": "Result_Report_by_Received_Date_",
+      "JsonMappingPath": "ResultByReceivedDate.json",
+      "FileType": 1813
     }
   ]
 }

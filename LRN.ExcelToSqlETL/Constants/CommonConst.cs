@@ -127,6 +127,46 @@ namespace LRN.ExcelToSqlETL.Core.Constants
 
             #endregion
 
+            #region Certus File Types
+
+            [Description("Adjustment Log By Date of Service")]
+            Adjustment_Log_By_Date_of_Service = 1806,
+
+            [Description("Bill Log by Date of Service")]
+            Bill_Log_by_Date_of_Service = 1804,
+
+            [Description("Bill Log by External Number Report")]
+            Bill_Log_by_External_Number_Report = 1802,
+
+            [Description("Bill log by postdate report")]
+            Bill_log_by_postdate_report = 1803,
+
+            [Description("Bill Report By Collection Date")]
+            Bill_Report_By_Collection_Date = 1810,
+
+            [Description("Bill Report by Received Date")]
+            Bill_Report_by_Received_Date = 1811,
+
+            [Description("Insurance Aging by Date of Service")]
+            Insurance_Aging_by_Date_of_Service = 1807,
+
+            [Description("Patient Aging by Date of Service")]
+            Patient_Aging_by_Date_of_Service = 1808,
+
+            [Description("Payment Log by Patient Report")]
+            Payment_Log_by_Patient_Report = 1805,
+
+            [Description("Rejected Claims")]
+            Rejected_Claims = 1809,
+
+            [Description("Result Report by Collection Date")]
+            Result_Report_by_Collection_Date = 1812,
+
+            [Description("Result Report by Received Date ")]
+            Result_Report_by_Received_Date = 1813,
+
+            #endregion
+
         }
 
         public enum DownloadReportType
