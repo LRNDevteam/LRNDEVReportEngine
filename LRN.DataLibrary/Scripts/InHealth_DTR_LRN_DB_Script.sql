@@ -1477,6 +1477,7 @@ CREATE TABLE [dbo].[BillingMaster](
 	[OrginalDenialCode] [nvarchar](255) NULL,
 	[DenialCode] [nvarchar](50) NULL,
 	[DenialPostedDate] [date] NULL,
+	[LISPanel] [nvarchar](255) NULL,
  CONSTRAINT [PK_BillingMaster] PRIMARY KEY CLUSTERED 
 (
 	[BillingMasterID] ASC
@@ -1836,10 +1837,12 @@ CREATE TABLE [dbo].[ClaimsLevelStatus](
 	[ClaimSubStatus] [nvarchar](50) NULL,
 	[FirstBillDate] [date] NULL,
 	[CreatedOn] [datetime] NULL,
-	[OrginalDenailCode] [nvarchar](50) NULL,
+	[OrginalDenailCode] [nvarchar](255) NULL,
 	[ICDCodes] [nvarchar](500) NULL,
 	[CPTWithUnits] [nvarchar](500) NULL,
 	[DenialPostedDate] [date] NULL,
+	[PanelCode] [nvarchar](50) NULL,
+	[LISPanel] [nvarchar](255) NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[VisitNumber] ASC
@@ -2282,7 +2285,7 @@ CREATE TABLE [dbo].[LISMaster](
 	[OrderInfo] [nvarchar](max) NULL,
 	[TestCategory] [nvarchar](255) NULL,
 	[CollectorName] [nvarchar](255) NULL,
-	[Medications] [nvarchar](255) NULL,
+	[Medications] [nvarchar](4000) NULL,
 	[SpecimenType] [nvarchar](255) NULL,
 	[TestsOrdered] [nvarchar](max) NULL,
 	[ClinicName] [nvarchar](255) NULL,
@@ -2350,116 +2353,116 @@ GO
 CREATE TABLE [dbo].[LISStaging](
 	[DiagnoseLISStagingId] [bigint] IDENTITY(1,1) NOT NULL,
 	[ImportedFileID] [int] NULL,
-	[TestOrderHistory82Id] [nvarchar](255) NULL,
-	[Name] [nvarchar](255) NULL,
-	[SampleID] [nvarchar](255) NULL,
-	[DocRequest] [nvarchar](255) NULL,
-	[InAppeals] [nvarchar](255) NULL,
-	[ClaimDenied] [nvarchar](255) NULL,
-	[UpdateDate] [nvarchar](255) NULL,
+	[TestOrderHistory82Id] [nvarchar](500) NULL,
+	[Name] [nvarchar](500) NULL,
+	[SampleID] [nvarchar](500) NULL,
+	[DocRequest] [nvarchar](500) NULL,
+	[InAppeals] [nvarchar](500) NULL,
+	[ClaimDenied] [nvarchar](500) NULL,
+	[UpdateDate] [nvarchar](500) NULL,
 	[ClaimNote] [nvarchar](max) NULL,
-	[Verified] [nvarchar](255) NULL,
-	[ReverifyBy] [nvarchar](255) NULL,
-	[PrimaryInsurance] [nvarchar](255) NULL,
-	[InsuranceCode2] [nvarchar](255) NULL,
-	[PayerCodeLookup] [nvarchar](255) NULL,
-	[PayerCodeLookupLabel] [nvarchar](255) NULL,
-	[PrimaryPolicyInformation] [nvarchar](255) NULL,
-	[Note] [nvarchar](255) NULL,
-	[BenefitsVerified] [nvarchar](255) NULL,
-	[PVerifyCode] [nvarchar](255) NULL,
-	[RequestBillingInfo] [nvarchar](255) NULL,
+	[Verified] [nvarchar](500) NULL,
+	[ReverifyBy] [nvarchar](500) NULL,
+	[PrimaryInsurance] [nvarchar](500) NULL,
+	[InsuranceCode2] [nvarchar](500) NULL,
+	[PayerCodeLookup] [nvarchar](500) NULL,
+	[PayerCodeLookupLabel] [nvarchar](500) NULL,
+	[PrimaryPolicyInformation] [nvarchar](500) NULL,
+	[Note] [nvarchar](2000) NULL,
+	[BenefitsVerified] [nvarchar](500) NULL,
+	[PVerifyCode] [nvarchar](500) NULL,
+	[RequestBillingInfo] [nvarchar](500) NULL,
 	[NoteToOfficeContact] [nvarchar](max) NULL,
-	[Discovery] [nvarchar](255) NULL,
-	[EligibilityPortal] [nvarchar](255) NULL,
-	[ClearinghouseName] [nvarchar](255) NULL,
-	[PortalName] [nvarchar](255) NULL,
+	[Discovery] [nvarchar](500) NULL,
+	[EligibilityPortal] [nvarchar](4000) NULL,
+	[ClearinghouseName] [nvarchar](4000) NULL,
+	[PortalName] [nvarchar](4000) NULL,
 	[HCPCS] [nvarchar](max) NULL,
 	[ICD10] [nvarchar](max) NULL,
-	[PracticeType] [nvarchar](255) NULL,
+	[PracticeType] [nvarchar](500) NULL,
 	[NonCoveredToxCodes] [nvarchar](max) NULL,
-	[SendToBilling] [nvarchar](255) NULL,
+	[SendToBilling] [nvarchar](500) NULL,
 	[HCPCS2] [nvarchar](max) NULL,
-	[Insurance] [nvarchar](255) NULL,
-	[BillingLab2] [nvarchar](255) NULL,
-	[RegistrationID] [nvarchar](255) NULL,
-	[WTHold] [nvarchar](255) NULL,
-	[Rejected] [nvarchar](255) NULL,
-	[PARRequired] [nvarchar](255) NULL,
-	[AnnualTestCount] [nvarchar](255) NULL,
-	[RegisteredDate] [nvarchar](255) NULL,
-	[FirstName] [nvarchar](255) NULL,
-	[LastName] [nvarchar](255) NULL,
-	[DateOfBirth] [nvarchar](255) NULL,
+	[Insurance] [nvarchar](500) NULL,
+	[BillingLab2] [nvarchar](500) NULL,
+	[RegistrationID] [nvarchar](500) NULL,
+	[WTHold] [nvarchar](500) NULL,
+	[Rejected] [nvarchar](500) NULL,
+	[PARRequired] [nvarchar](500) NULL,
+	[AnnualTestCount] [nvarchar](500) NULL,
+	[RegisteredDate] [nvarchar](500) NULL,
+	[FirstName] [nvarchar](500) NULL,
+	[LastName] [nvarchar](500) NULL,
+	[DateOfBirth] [nvarchar](500) NULL,
 	[Gender] [nvarchar](10) NULL,
-	[Race] [nvarchar](255) NULL,
-	[Ethnicity] [nvarchar](255) NULL,
-	[PatientID] [nvarchar](255) NULL,
-	[StreetAddress] [nvarchar](255) NULL,
-	[City] [nvarchar](255) NULL,
-	[State] [nvarchar](255) NULL,
-	[Zip] [nvarchar](255) NULL,
-	[PatientIDEntry] [nvarchar](255) NULL,
-	[SecondaryInsurance] [nvarchar](255) NULL,
-	[SecondaryPolicyInformation] [nvarchar](255) NULL,
-	[VerifiedDate] [nvarchar](255) NULL,
+	[Race] [nvarchar](500) NULL,
+	[Ethnicity] [nvarchar](500) NULL,
+	[PatientID] [nvarchar](500) NULL,
+	[StreetAddress] [nvarchar](500) NULL,
+	[City] [nvarchar](500) NULL,
+	[State] [nvarchar](500) NULL,
+	[Zip] [nvarchar](500) NULL,
+	[PatientIDEntry] [nvarchar](500) NULL,
+	[SecondaryInsurance] [nvarchar](500) NULL,
+	[SecondaryPolicyInformation] [nvarchar](500) NULL,
+	[VerifiedDate] [nvarchar](500) NULL,
 	[NewPatient] [nvarchar](10) NULL,
 	[EditPatient] [nvarchar](10) NULL,
-	[LastTest] [nvarchar](255) NULL,
+	[LastTest] [nvarchar](500) NULL,
 	[Order1] [nvarchar](max) NULL,
 	[Reflex] [nvarchar](max) NULL,
-	[TestCategory] [nvarchar](255) NULL,
-	[EntryNumber] [nvarchar](255) NULL,
-	[CollectionMedia] [nvarchar](255) NULL,
-	[CollectedBy] [nvarchar](255) NULL,
+	[TestCategory] [nvarchar](500) NULL,
+	[EntryNumber] [nvarchar](500) NULL,
+	[CollectionMedia] [nvarchar](500) NULL,
+	[CollectedBy] [nvarchar](500) NULL,
 	[Medications] [nvarchar](max) NULL,
 	[OrderReason] [nvarchar](max) NULL,
-	[SpecimenType] [nvarchar](255) NULL,
+	[SpecimenType] [nvarchar](500) NULL,
 	[Components] [nvarchar](max) NULL,
-	[OrderFormEntryNumber] [nvarchar](255) NULL,
-	[CollectedTime] [nvarchar](255) NULL,
+	[OrderFormEntryNumber] [nvarchar](500) NULL,
+	[CollectedTime] [nvarchar](500) NULL,
 	[ElectronicSignature] [nvarchar](max) NULL,
-	[Account] [nvarchar](255) NULL,
-	[AccountID] [nvarchar](255) NULL,
-	[ProviderLast] [nvarchar](255) NULL,
-	[ProviderFirst] [nvarchar](255) NULL,
-	[NPI] [nvarchar](255) NULL,
-	[ParentCompany] [nvarchar](255) NULL,
-	[ParentAccountID] [nvarchar](255) NULL,
-	[AccountContactEmail] [nvarchar](255) NULL,
-	[RepEmail] [nvarchar](255) NULL,
-	[OrderIPAddress] [nvarchar](255) NULL,
-	[PerformingLab] [nvarchar](255) NULL,
+	[Account] [nvarchar](500) NULL,
+	[AccountID] [nvarchar](500) NULL,
+	[ProviderLast] [nvarchar](500) NULL,
+	[ProviderFirst] [nvarchar](500) NULL,
+	[NPI] [nvarchar](500) NULL,
+	[ParentCompany] [nvarchar](500) NULL,
+	[ParentAccountID] [nvarchar](500) NULL,
+	[AccountContactEmail] [nvarchar](500) NULL,
+	[RepEmail] [nvarchar](500) NULL,
+	[OrderIPAddress] [nvarchar](500) NULL,
+	[PerformingLab] [nvarchar](500) NULL,
 	[PerformingLabAddress] [nvarchar](500) NULL,
-	[PerformingLabCLIA] [nvarchar](255) NULL,
-	[BillingLabCLIA] [nvarchar](255) NULL,
-	[ResultsPortal] [nvarchar](255) NULL,
+	[PerformingLabCLIA] [nvarchar](500) NULL,
+	[BillingLabCLIA] [nvarchar](500) NULL,
+	[ResultsPortal] [nvarchar](500) NULL,
 	[BillingLabAddress] [nvarchar](500) NULL,
-	[Division] [nvarchar](255) NULL,
-	[IHBillingForDTR] [nvarchar](255) NULL,
-	[EditLink] [nvarchar](255) NULL,
+	[Division] [nvarchar](500) NULL,
+	[IHBillingForDTR] [nvarchar](500) NULL,
+	[EditLink] [nvarchar](500) NULL,
 	[UploadToQbench] [nvarchar](10) NULL,
-	[InsuranceCode] [nvarchar](255) NULL,
-	[BillingLab] [nvarchar](255) NULL,
+	[InsuranceCode] [nvarchar](500) NULL,
+	[BillingLab] [nvarchar](500) NULL,
 	[CPT] [nvarchar](max) NULL,
 	[PatientRegisterLink] [nvarchar](1024) NULL,
 	[ReqLink] [nvarchar](1024) NULL,
 	[ResultLink] [nvarchar](1024) NULL,
-	[ToxRules1] [nvarchar](255) NULL,
-	[ToxRules2] [nvarchar](255) NULL,
-	[ToxRules3] [nvarchar](255) NULL,
-	[ToxRules4] [nvarchar](255) NULL,
-	[ToxRules5] [nvarchar](255) NULL,
-	[ToxGate1] [nvarchar](255) NULL,
-	[ToxGate2] [nvarchar](255) NULL,
-	[ToxApproved] [nvarchar](255) NULL,
-	[PolicyNumberCharacteristics] [nvarchar](255) NULL,
-	[ResultMatched] [nvarchar](255) NULL,
-	[EntryStatus] [nvarchar](255) NULL,
-	[EntryDatecreated] [nvarchar](255) NULL,
-	[EntryDatesubmitted] [nvarchar](255) NULL,
-	[EntryDateupdated] [nvarchar](255) NULL,
-	[ImportedOn] [nvarchar](255) NULL,
+	[ToxRules1] [nvarchar](max) NULL,
+	[ToxRules2] [nvarchar](max) NULL,
+	[ToxRules3] [nvarchar](max) NULL,
+	[ToxRules4] [nvarchar](max) NULL,
+	[ToxRules5] [nvarchar](max) NULL,
+	[ToxGate1] [nvarchar](max) NULL,
+	[ToxGate2] [nvarchar](max) NULL,
+	[ToxApproved] [nvarchar](500) NULL,
+	[PolicyNumberCharacteristics] [nvarchar](500) NULL,
+	[ResultMatched] [nvarchar](500) NULL,
+	[EntryStatus] [nvarchar](500) NULL,
+	[EntryDatecreated] [nvarchar](500) NULL,
+	[EntryDatesubmitted] [nvarchar](500) NULL,
+	[EntryDateupdated] [nvarchar](500) NULL,
+	[ImportedOn] [nvarchar](500) NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[DiagnoseLISStagingId] ASC
@@ -3669,11 +3672,10 @@ BEGIN
 
         COMMIT TRANSACTION;
 
-		
+		EXEC sp_ProcessBillingAccession;
 		EXEC sp_ClaimLevelStatusUpdate;
 		----EXEC SP_ProcessVAAvsLIS;
 		EXEC SP_ProcessLISvsBilling;
-		EXEC sp_ProcessBillingAccession;
 		EXEC [SP_UpdatePanelDetail_Billing];
 
     END TRY
@@ -3931,7 +3933,35 @@ ELSE 'Un Categorized' END ClaimStatus,
         LEFT JOIN #DenailTracker DT ON BM.VisitNumber = DT.VisitNumber
         LEFT JOIN #CptCodes CPT ON BM.VisitNumber = CPT.VisitNumber
 		LEFT JOIN #ICDCode ICD ON BM.VisitNumber = ICD.VisitNumber;
+
+		UPDATE ClaimsLevelStatus SET PanelCode = CASE 
+    WHEN  CPTCodes LIKE '%80307%'
+       OR CPTCodes LIKE '%G0480%'
+       OR CPTCodes LIKE '%G0481%'
+       OR CPTCodes LIKE '%G0482%'
+    THEN 'Toxicology'
+
+    WHEN  CPTCodes LIKE '%87486%'
+       OR CPTCodes LIKE '%87541%'
+       OR CPTCodes LIKE '%87563%'
+       OR CPTCodes LIKE '%87631%'
+       OR CPTCodes LIKE '%87640%'
+       OR CPTCodes LIKE '%87798%'
+       OR CPTCodes LIKE '%87481%'
+       OR CPTCodes LIKE '%87651%'
+       OR CPTCodes LIKE '%87653%'
+       OR CPTCodes LIKE '%87500%'
+       OR CPTCodes LIKE '%87641%'
+    THEN 'UTI Panel'
+
+    ELSE NULL
+END ;
+
+UPDATE CS SET CS.LISPanel = ISNULL(LIS.PanelCode,'Unable to Locate')FROM ClaimsLevelStatus CS
+JOIN LISMaster LIS ON CS.VisitNumber = LIS.VisitNumberIH
+
         COMMIT TRAN;
+
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0
@@ -3988,6 +4018,8 @@ BEGIN
 		CAST(b.ChargeEntryDate AS DATE) AS    ChargeEntryDate,
 		CAST(FirstBillDate AS DATE) AS      FirstBillDate,
 		ISNULL(b.PanelCode, 'No Panel Located') AS PanelGroup,
+		ISNULL(b.LISPanel, 'No Panel Located') AS LISPanel,
+		--ISNULL(b.PanelName, 'No Panel Located') AS OrderInfo,
 		POS,
 		TOS,
         b.ICD10Code,
@@ -4148,7 +4180,7 @@ BEGIN
         CM.ClinicName,
         LIS.SampleCollectionDate,
         BM.ReferringProvider,
-       	isnull(BM.PanelCode, 'No Panel Located') AS PanelName,
+		ISNULL(BM.PanelName,'No Panel Info') AS OrderInfo,
 		BM.PerformingLab,lis.SalesRepEmail SalesPersonName,BM.BillingLab,
         ROW_NUMBER() OVER (
             PARTITION BY BM.VisitNumber 
@@ -4169,7 +4201,9 @@ BEGIN
         md.VisitNumber,
         ISNULL(md.AccessionNo,'Missing LIS Data') AS AccessionNo,
         --ISNULL(md.PanelName,'No Panel Info') AS PanelName,
-		ISNULL(md.PanelName,'No Panel Info') AS PanelGroup,
+		ISNULL(CPS.PanelCode,'No Panel Info') AS PanelGroup,
+		ISNULL(CPS.LISPanel,'No Panel Info') AS LISPanel,
+		OrderInfo OrderInfo,
         ISNULL(PayerName,'No Payer Info') AS Carrier,
         md.PayerType AS FinancialClass,
         md.BillingProvider,
@@ -4393,6 +4427,8 @@ BEGIN
 		CAST(b.ChargeEntryDate AS DATE) AS    ChargeEntryDate,
 		CAST(FirstBillDate AS DATE) AS      FirstBillDate,
 		ISNULL(b.PanelCode, 'No Panel Located') AS PanelGroup,
+		ISNULL(b.LISPanel, 'No Panel Located') AS LISPanel,
+		--ISNULL(b.PanelName, 'No Panel Located') AS OrderInfo,
 		POS,
 		TOS,
         b.ICD10Code,
@@ -4553,7 +4589,7 @@ BEGIN
         CM.ClinicName,
         LIS.SampleCollectionDate,
         BM.ReferringProvider,
-       	isnull(BM.PanelCode, 'No Panel Located') AS PanelName,
+		ISNULL(BM.PanelName,'No Panel Info') AS OrderInfo,
 		BM.PerformingLab,lis.SalesRepEmail SalesPersonName,BM.BillingLab,
         ROW_NUMBER() OVER (
             PARTITION BY BM.VisitNumber 
@@ -4574,7 +4610,9 @@ BEGIN
         md.VisitNumber,
         ISNULL(md.AccessionNo,'Missing LIS Data') AS AccessionNo,
         --ISNULL(md.PanelName,'No Panel Info') AS PanelName,
-		ISNULL(md.PanelName,'No Panel Info') AS PanelGroup,
+		ISNULL(CPS.PanelCode,'No Panel Info') AS PanelGroup,
+		ISNULL(CPS.LISPanel,'No Panel Info') AS LISPanel,
+		OrderInfo OrderInfo,
         ISNULL(PayerName,'No Payer Info') AS Carrier,
         md.PayerType AS FinancialClass,
         md.BillingProvider,
@@ -5145,6 +5183,7 @@ BEGIN
         COMMIT TRANSACTION;
 
 		EXEC SP_ProcessLISvsBilling;
+		EXEC [sp_ProcessBillingAccession];
 
     END TRY
     BEGIN CATCH
@@ -5330,7 +5369,7 @@ AS BEGIN
 
 		INSERT INTO BillingAccessions (VisitNumber,PatientName,BeginDOS,LastBillDate,DOE)
 		Select VisitNumber,PatientName,BeginDOS,MIN(FirstBillDate),MAX(ChargeEntryDate) from BillingMaster 
-		GROUP BY VisitNumber,PatientName,BeginDOS
+		GROUP BY VisitNumber,PatientName,BeginDOS 
 
 		UPDATE BA SET BA.AccessionNo = REPLACE(VAA.AccessionNo,'.1','') FROM BillingAccessions BA 
 		JOIN VAAMaster VAA ON BA.VisitNumber = VAA.VisitNumber WHERE VAA.AccessionNo NOT LIKE '%[_]%'
@@ -5339,9 +5378,41 @@ AS BEGIN
 		JOIN LISMaster LIS ON BA.BeginDOS = LIS.SampleCollectionDate AND Ba.PatientName = (LIS.PatientLastName+','+LIS.PatientFirstName) 
 		WHERE BA.AccessionNo IS NULL
 
-		UPDATE BA SET BA.AccessionNo = LIS.AccessionNo FROM BillingAccessions BA 
-		JOIN LISMaster LIS ON BA.BeginDOS = LIS.SampleCollectionDate AND Ba.PatientName = (LIS.PatientFirstName+','+LIS.PatientLastName ) 
-		WHERE BA.AccessionNo IS NULL
+		--UPDATE BA SET BA.AccessionNo = LIS.AccessionNo FROM BillingAccessions BA 
+		--JOIN LISMaster LIS ON BA.BeginDOS = LIS.SampleCollectionDate AND Ba.PatientName = (LIS.PatientFirstName+','+LIS.PatientLastName ) 
+		--WHERE BA.AccessionNo IS NULL
+
+			;WITH LISChoice AS
+			(
+				SELECT
+					LIS.SampleCollectionDate,
+					LIS.PatientFirstName,
+					LIS.PatientLastName,
+					LIS.AccessionNo,
+					LTRIM(RTRIM(LIS.Entry_Status)) AS Entry_Status,
+					ROW_NUMBER() OVER
+					(
+						PARTITION BY LIS.SampleCollectionDate,
+									 LIS.PatientFirstName,
+									 LIS.PatientLastName
+						ORDER BY 
+							CASE 
+								WHEN LTRIM(RTRIM(LIS.Entry_Status)) = 'Sent to Billing' THEN 0 
+								ELSE 1 
+							END,
+							LIS.AccessionNo   -- tie-breaker if needed
+					) AS rn
+				FROM LISMaster LIS
+			)
+			UPDATE BA
+			SET BA.AccessionNo = L.AccessionNo
+			FROM BillingAccessions BA
+			JOIN LISChoice L
+				ON  BA.BeginDOS    = L.SampleCollectionDate
+				AND BA.PatientName = L.PatientFirstName + ',' + L.PatientLastName
+			WHERE BA.AccessionNo IS NULL
+			  AND L.rn = 1;   -- only 1 LIS row per patient/DOS
+
 
 		UPDATE BillingAccessions SET AccessionNo = 'Unable to Locate' WHERE AccessionNo IS NULL
 
@@ -5356,7 +5427,8 @@ AS BEGIN
 					PARTITION BY BA.AccessionNo
 					ORDER BY BA.LastBillDate ASC     -- oldest bill date first
 				) AS rn
-			FROM BillingAccessions BA
+			FROM BillingAccessions BA 
+			--Where BA.LastBillDate IS NOT NULL
 		)
 		UPDATE LIS
 		SET
@@ -5537,52 +5609,52 @@ BEGIN
         /*******************************************************************************************
          Step 1: Update LISMaster with enriched patient/billing data
         ********************************************************************************************/
-        ;WITH CTE_BillingIH AS (
-            SELECT
-                VisitNumber,
-                FirstBillDate,
-                ChargeEntryDate,
-                AccessionNo,
-                ROW_NUMBER() OVER (
-                    PARTITION BY VisitNumber, PayerTypeId, PrimaryPayerID, FirstBillDate, ChargeEntryDate
-                    ORDER BY FirstBillDate
-                ) AS RowNum
-            FROM BillingMaster
-            WHERE LTRIM(RTRIM(BillingLab)) = 'In Health'  AND  FirstBillDate IS NOT NULL
-        )
-        UPDATE LIS
-        SET
-            VisitNumberIH     = SCD.VisitNumber,
-            FirstBilledDateIH = SCD.FirstBillDate,
-            ChargeEntryDateIH = SCD.ChargeEntryDate,
-			BilledInHealthAMD = SCD.VisitNumber
+  ----      ;WITH CTE_BillingIH AS (
+  ----          SELECT
+  ----              VisitNumber,
+  ----              FirstBillDate,
+  ----              ChargeEntryDate,
+  ----              AccessionNo,
+  ----              ROW_NUMBER() OVER (
+  ----                  PARTITION BY VisitNumber, PayerTypeId, PrimaryPayerID, FirstBillDate, ChargeEntryDate
+  ----                  ORDER BY FirstBillDate
+  ----              ) AS RowNum
+  ----          FROM BillingMaster
+  ----          WHERE LTRIM(RTRIM(BillingLab)) = 'In Health'  AND  FirstBillDate IS NOT NULL
+  ----      )
+  ----      UPDATE LIS
+  ----      SET
+  ----          VisitNumberIH     = SCD.VisitNumber,
+  ----          FirstBilledDateIH = SCD.FirstBillDate,
+  ----          ChargeEntryDateIH = SCD.ChargeEntryDate,
+		----	BilledInHealthAMD = SCD.VisitNumber
         
-		FROM [dbo].[LISMaster] LIS
-        JOIN CTE_BillingIH SCD
-          ON LTRIM(RTRIM(LIS.AccessionNo)) = LTRIM(RTRIM(SCD.AccessionNo));
+		----FROM [dbo].[LISMaster] LIS
+  ----      JOIN CTE_BillingIH SCD
+  ----        ON LTRIM(RTRIM(LIS.AccessionNo)) = LTRIM(RTRIM(SCD.AccessionNo));
 
-        ;WITH CTE_BillingDTR AS (
-            SELECT
-                VisitNumber,
-                FirstBillDate,
-                ChargeEntryDate,
-                AccessionNo,
-                ROW_NUMBER() OVER (
-                    PARTITION BY VisitNumber, PayerTypeId, PrimaryPayerID, FirstBillDate, ChargeEntryDate
-                    ORDER BY FirstBillDate 
-                ) AS RowNum
-            FROM BillingMaster 
-            WHERE LTRIM(RTRIM(BillingLab)) = 'DTR' AND  FirstBillDate IS NOT NULL
-        )
-        UPDATE LIS
-        SET
-            VisitNumberDTR     = SCD.VisitNumber,
-            FirstBilledDateDTR = SCD.FirstBillDate,
-            ChargeEntryDateDTR = SCD.ChargeEntryDate,
-			BilledDTRAMD = SCD.VisitNumber
-        FROM [dbo].[LISMaster] LIS
-        JOIN CTE_BillingDTR SCD
-          ON LTRIM(RTRIM(LIS.AccessionNo)) = LTRIM(RTRIM(SCD.AccessionNo));
+  ----      ;WITH CTE_BillingDTR AS (
+  ----          SELECT
+  ----              VisitNumber,
+  ----              FirstBillDate,
+  ----              ChargeEntryDate,
+  ----              AccessionNo,
+  ----              ROW_NUMBER() OVER (
+  ----                  PARTITION BY VisitNumber, PayerTypeId, PrimaryPayerID, FirstBillDate, ChargeEntryDate
+  ----                  ORDER BY FirstBillDate 
+  ----              ) AS RowNum
+  ----          FROM BillingMaster 
+  ----          WHERE LTRIM(RTRIM(BillingLab)) = 'DTR' AND  FirstBillDate IS NOT NULL
+  ----      )
+  ----      UPDATE LIS
+  ----      SET
+  ----          VisitNumberDTR     = SCD.VisitNumber,
+  ----          FirstBilledDateDTR = SCD.FirstBillDate,
+  ----          ChargeEntryDateDTR = SCD.ChargeEntryDate,
+		----	BilledDTRAMD = SCD.VisitNumber
+  ----      FROM [dbo].[LISMaster] LIS
+  ----      JOIN CTE_BillingDTR SCD
+  ----        ON LTRIM(RTRIM(LIS.AccessionNo)) = LTRIM(RTRIM(SCD.AccessionNo));
 
         /*******************************************************************************************
          Step 4b: Derive ResultedStatus, BillingStatus, SubStatus, etc.
@@ -5619,21 +5691,22 @@ BEGIN
         -------------------------------------------------------------------------------
      
 		-- Only flip rows that are currently "Other Samples"
+		;WITH DuplicatedAccessions AS
+		(
+			SELECT 
+				AccessionNo = LTRIM(RTRIM(AccessionNo))
+			FROM dbo.LISMaster
+			WHERE LTRIM(RTRIM(BillingStatus)) IN ('Other Samples', 'Billable')
+			GROUP BY LTRIM(RTRIM(AccessionNo))
+			HAVING COUNT(*) > 1
+		)
 		UPDATE LM
-		   SET BillingStatus    = 'Duplicate'
-			   --BillingSubStatus = 'Requires Review'
+		SET BillingStatus = 'Duplicate'
 		FROM dbo.LISMaster AS LM
-		WHERE LTRIM(RTRIM(LM.BillingStatus)) = 'Other Samples'
-		  AND LM.LISMasterId IN
-		  (
-			  SELECT LISMasterId
-			  FROM dbo.LISMaster AS X
-			  WHERE LTRIM(RTRIM(X.AccessionNo)) = LTRIM(RTRIM(LM.AccessionNo))
-				AND (
-					  LTRIM(RTRIM(X.BillingStatus)) <> 'Other Samples'
-					  OR LTRIM(RTRIM(X.Entry_Status)) = 'Incomplete'
-					)
-		  );
+		JOIN DuplicatedAccessions AS DA
+			ON LTRIM(RTRIM(LM.AccessionNo)) = DA.AccessionNo
+		WHERE LTRIM(RTRIM(LM.BillingStatus)) = 'Other Samples';
+
 
 
         -------------------------------------------------------------------------------
@@ -5643,10 +5716,11 @@ BEGIN
         SET BillingStatus = 'Self-Pay'
         FROM dbo.LISMaster AS OS
         WHERE (
-                LTRIM(RTRIM(UPPER(OS.PrimaryInsurancePayer))) IN ('SELF','SELF PAY','PRIVATE PAY','PAY','SELF PA','SEL')
-                --OR LTRIM(RTRIM(UPPER(OS.InsuranceCode))) = 'SELF PAY'
-              ) AND BillingStatus <> 'Duplicate';
+                LTRIM(RTRIM(UPPER(OS.PrimaryInsurancePayer))) IN ('SELF','SELF PAY','PRIVATE PAY','PAY','SELF PA')
+              ) AND BillingStatus IN ('Other Samples','Billable');
 
+		UPDATE LISMaster SET BillingStatus = 'Self-Pay' WHERE LTRIM(RTRIM(UPPER(PrimaryInsurancePayer))) IN ('SEL','SE')
+		AND LTRIM(RTRIM(UPPER(Insurance))) IN ('SELF PAY')
         -------------------------------------------------------------------------------
         -- Billing Sub Status (logic unchanged; only added LTRIM/RTRIM on text checks)
         -------------------------------------------------------------------------------
@@ -5684,7 +5758,7 @@ BEGIN
             WHEN LTRIM(RTRIM(BillingStatus)) = 'Billable' AND IsBilled = 'Un Billed' 
                  AND LTRIM(RTRIM(NexumStatusIH)) IN ('Invalid Diagnosis','Invalid Provider','Invalid Client Procedure','Invalid Payer')
                  THEN 'Nexum Pre Processing Queue - IH'
-            ELSE 'Requires Review'
+            ELSE ''
         END;
 
 		UPDATE LISMaster SET IsBilled = CASE 
@@ -5717,10 +5791,9 @@ BEGIN
               ) AND PatientLastName <> 'DEMOREST' 
 			  AND UPPER(LTRIM(RTRIM(OS.PatientFirstName)) + ' ' + LTRIM(RTRIM(OS.PatientLastName))) <> 'TARA TRAINOR';
 
-		  UPDATE LISMaster SET BillingSubStatus = 'Requires Review' Where BillingStatus = 'Billable' AND IsBilled = 'Un Billed' 
-	
-
-        COMMIT TRANSACTION;
+		UPDATE LISMaster SET BillingSubStatus = 'Requires Review' Where BillingStatus = 'Billable' AND IsBilled = 'Un Billed' AND ISNULL(BillingSubStatus,'') = ''  
+		
+		COMMIT TRANSACTION;
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0
@@ -6069,23 +6142,23 @@ BEGIN
         /*******************************************************************************************
          Step 4a: Update LISMaster with enriched patient/billing data
         ********************************************************************************************/
-        UPDATE LIS
-        SET 
-            VisitNumberIH         = SCD.VisitNumber,
-            FirstBilledDateIH      = SCD.FirstBillDate,
-            ChargeEntryDateIH    = SCD.ChargeEntryDate
-        FROM [dbo].[LISMaster] LIS
-        JOIN #SampleCollectionData SCD ON LIS.AccessionNo = SCD.AccessionNo
-		WHERE SCD.BillingLab = 'In Health';
+  ----      UPDATE LIS
+  ----      SET 
+  ----          VisitNumberIH         = SCD.VisitNumber,
+  ----          FirstBilledDateIH      = SCD.FirstBillDate,
+  ----          ChargeEntryDateIH    = SCD.ChargeEntryDate
+  ----      FROM [dbo].[LISMaster] LIS
+  ----      JOIN #SampleCollectionData SCD ON LIS.AccessionNo = SCD.AccessionNo
+		----WHERE SCD.BillingLab = 'In Health';
 
-		   UPDATE LIS
-        SET 
-            VisitNumberDTR         = SCD.VisitNumber,
-            FirstBilledDateDTR      = SCD.FirstBillDate,
-            ChargeEntryDateDTR    = SCD.ChargeEntryDate
-        FROM [dbo].[LISMaster] LIS
-        JOIN #SampleCollectionData SCD ON LIS.AccessionNo = SCD.AccessionNo
-		WHERE SCD.BillingLab = 'DTR';
+		----   UPDATE LIS
+  ----      SET 
+  ----          VisitNumberDTR         = SCD.VisitNumber,
+  ----          FirstBilledDateDTR      = SCD.FirstBillDate,
+  ----          ChargeEntryDateDTR    = SCD.ChargeEntryDate
+  ----      FROM [dbo].[LISMaster] LIS
+  ----      JOIN #SampleCollectionData SCD ON LIS.AccessionNo = SCD.AccessionNo
+		----WHERE SCD.BillingLab = 'DTR';
 
 		UPDATE BM SET 
            BM.AccessionNo = LIS.AccessionNo 
@@ -6318,49 +6391,59 @@ BEGIN
          (Your comment mentioned PanelName; original code set PanelCode.
           This keeps PanelCode for compatibility—switch if needed.)
     ========================================================*/
-    UPDATE BM
-       SET BM.PanelCode =
-           CASE
-               WHEN BM.CPTCode IN ('80307','G0480','G0481','G0482','G0483') THEN 'Toxicology'
-               WHEN BM.CPTCode LIKE '87%'                                   THEN 'Infectious Disease'
-               ELSE BM.PanelCode
-           END
-    FROM dbo.BillingMaster AS BM
-    WHERE (BM.CPTCode IN ('80307','G0480','G0481','G0482','G0483') AND BM.PanelCode <> 'Toxicology')
-       OR (BM.CPTCode LIKE '87%' AND BM.PanelCode <> 'Infectious Disease');
+    --UPDATE BM
+    --   SET BM.PanelCode =
+    --       CASE
+    --           WHEN BM.CPTCode IN ('80307','G0480','G0481','G0482','G0483') THEN 'Toxicology'
+    --           WHEN BM.CPTCode LIKE '87%'                                   THEN 'Infectious Disease'
+    --           ELSE BM.PanelCode
+    --       END
+    --FROM dbo.BillingMaster AS BM
+    --WHERE (BM.CPTCode IN ('80307','G0480','G0481','G0482','G0483') AND BM.PanelCode <> 'Toxicology')
+    --   OR (BM.CPTCode LIKE '87%' AND BM.PanelCode <> 'Infectious Disease');
+
+	UPDATE BillingMaster SET PanelCode = CASE 
+    WHEN CPTCode IN ('80307', 'G0480', 'G0481', 'G0482') THEN 'Toxicology'
+    WHEN CPTCode IN (
+        '87486', '87541', '87563', '87631', '87640', '87798',
+        '87481', '87651', '87653', '87500', '87641'
+    ) THEN 'UTI Panel'
+    ELSE PanelCode
+END;
 
 
     /*========================================================
       1) Direct AccessionNo match: cheap and highly selective
     ========================================================*/
-    ;WITH LIS_norm AS
-    (
-        SELECT L.AccessionNo, L.OrderInfo, L.PanelCode
-        FROM dbo.LISMaster AS L
-    )
-    UPDATE BM
-       SET BM.PanelName = L.OrderInfo,
-           BM.PanelCode = ISNULL(L.PanelCode,BM.PanelCode)
-    FROM dbo.BillingMaster AS BM
-    JOIN LIS_norm AS L
-        ON L.AccessionNo = BM.AccessionNo
-    --WHERE (BM.PanelName IS NULL OR BM.PanelName <> L.OrderInfo
-    --    OR BM.PanelCode IS NULL OR BM.PanelCode <> L.PanelCode);
+    --;WITH LIS_norm AS
+    --(
+    --    SELECT L.AccessionNo, L.OrderInfo, L.PanelCode
+    --    FROM dbo.LISMaster AS L
+    --)
+    --UPDATE BM
+    --   SET BM.PanelName = L.OrderInfo,
+    --       BM.LISPanel = ISNULL(L.PanelCode,'Unable to Locate')
+    --FROM dbo.BillingMaster AS BM
+    --JOIN LIS_norm AS L
+    --    ON L.AccessionNo = BM.AccessionNo
+    ----WHERE (BM.PanelName IS NULL OR BM.PanelName <> L.OrderInfo
+    ----    OR BM.PanelCode IS NULL OR BM.PanelCode <> L.PanelCode);
 
    
     UPDATE BM
        SET BM.PanelName = CD.OrderInfo,
-           BM.PanelCode = ISNULL(CD.PanelCode,BM.PanelCode)
+           BM.LISPanel = ISNULL(CD.PanelCode,'Unable to Locate')
     FROM dbo.BillingMaster AS BM
     JOIN LISMaster AS CD
         ON BM.VisitNumber = CD.VisitNumberIH
-    WHERE BM.PanelCode IS NULL
+    --WHERE BM.PanelCode IS NULL
 
     /*========================================================
       5) Backfill nulls (unmatched after all rules)
-    ========================================================*/
-    UPDATE dbo.BillingMaster
-       SET PanelCode = 'Unable to Locate'
-     WHERE PanelCode IS NULL;
+    --========================================================*/
+    --UPDATE dbo.BillingMaster
+    --   SET LISPanel = 'Unable to Locate'
+    -- WHERE PanelCode IS NULL;
 END
 GO
+
