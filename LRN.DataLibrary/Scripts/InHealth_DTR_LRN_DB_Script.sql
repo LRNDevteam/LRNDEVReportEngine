@@ -1,7 +1,10 @@
-USE [InHealthLRN]
+﻿USE [InHealthLRN]
 GO
 /****** Object:  StoredProcedure [dbo].[SP_UpdatePanelDetail_Billing]******/
 DROP PROCEDURE [dbo].[SP_UpdatePanelDetail_Billing]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_UpdateDenialMasterTable]******/
+DROP PROCEDURE [dbo].[sp_UpdateDenialMasterTable]
 GO
 /****** Object:  StoredProcedure [dbo].[sp_RebuildNewIndexes]******/
 DROP PROCEDURE [dbo].[sp_RebuildNewIndexes]
@@ -57,11 +60,20 @@ GO
 /****** Object:  StoredProcedure [dbo].[sp_GetLISMasterReportByDateRange]******/
 DROP PROCEDURE [dbo].[sp_GetLISMasterReportByDateRange]
 GO
+/****** Object:  StoredProcedure [dbo].[sp_GetDenialLineLevelReport]******/
+DROP PROCEDURE [dbo].[sp_GetDenialLineLevelReport]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_GETDenialClaimLevel]******/
+DROP PROCEDURE [dbo].[sp_GETDenialClaimLevel]
+GO
 /****** Object:  StoredProcedure [dbo].[sp_GetCollectionReport]******/
 DROP PROCEDURE [dbo].[sp_GetCollectionReport]
 GO
 /****** Object:  StoredProcedure [dbo].[sp_GetCollectionLineLevelReport]******/
 DROP PROCEDURE [dbo].[sp_GetCollectionLineLevelReport]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_DenailDescrpUpdateByVisitCPT]******/
+DROP PROCEDURE [dbo].[sp_DenailDescrpUpdateByVisitCPT]
 GO
 /****** Object:  StoredProcedure [dbo].[sp_ClaimLevelStatusUpdate]******/
 DROP PROCEDURE [dbo].[sp_ClaimLevelStatusUpdate]
@@ -444,6 +456,8 @@ ALTER TABLE [dbo].[DenialTrackingMaster] DROP CONSTRAINT [DF__DenialTra__Updat__
 GO
 ALTER TABLE [dbo].[DenialTrackingMaster] DROP CONSTRAINT [DF__DenialTra__Creat__44EAFE58]
 GO
+ALTER TABLE [dbo].[DenialMasterTable] DROP CONSTRAINT [DF__DenialMas__Creat__3AD84F90]
+GO
 ALTER TABLE [dbo].[CustomCollectionStaging] DROP CONSTRAINT [DF__CustomCol__Impot__0618D7E0]
 GO
 ALTER TABLE [dbo].[CPTCodeMaster] DROP CONSTRAINT [DF__CPTCodeMa__Creat__0524B3A7]
@@ -630,6 +644,10 @@ GO
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[DenialTrackingStaging]') AND type in (N'U'))
 DROP TABLE [dbo].[DenialTrackingStaging]
 GO
+/****** Object:  Table [dbo].[DenialMasterTable]******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[DenialMasterTable]') AND type in (N'U'))
+DROP TABLE [dbo].[DenialMasterTable]
+GO
 /****** Object:  Table [dbo].[CustomCollectionStaging]******/
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CustomCollectionStaging]') AND type in (N'U'))
 DROP TABLE [dbo].[CustomCollectionStaging]
@@ -692,6 +710,9 @@ GO
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[BillingMaster]') AND type in (N'U'))
 DROP TABLE [dbo].[BillingMaster]
 GO
+/****** Object:  UserDefinedFunction [dbo].[SplitString]******/
+DROP FUNCTION [dbo].[SplitString]
+GO
 /****** Object:  UserDefinedFunction [dbo].[GetUniqueICD10Codes]******/
 DROP FUNCTION [dbo].[GetUniqueICD10Codes]
 GO
@@ -700,6 +721,12 @@ DROP FUNCTION [dbo].[GetOrignaltDenailCodeByVisitNumber]
 GO
 /****** Object:  UserDefinedFunction [dbo].[GetOriginalDenailCodeByVisitCPT]******/
 DROP FUNCTION [dbo].[GetOriginalDenailCodeByVisitCPT]
+GO
+/****** Object:  UserDefinedFunction [dbo].[GetDenialCodeDescByVisitCPT]******/
+DROP FUNCTION [dbo].[GetDenialCodeDescByVisitCPT]
+GO
+/****** Object:  UserDefinedFunction [dbo].[GetDenialCodeDescByVisit]******/
+DROP FUNCTION [dbo].[GetDenialCodeDescByVisit]
 GO
 /****** Object:  UserDefinedFunction [dbo].[GetDenailCodeByVisitNumber]******/
 DROP FUNCTION [dbo].[GetDenailCodeByVisitNumber]
@@ -1232,6 +1259,207 @@ BEGIN
     RETURN @Result;
 END
 GO
+/****** Object:  UserDefinedFunction [dbo].[GetDenialCodeDescByVisit]******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE  FUNCTION [dbo].[GetDenialCodeDescByVisit]
+(
+    @visitno VARCHAR(100)
+)
+RETURNS NVARCHAR(MAX)
+AS
+BEGIN
+    DECLARE @Result NVARCHAR(MAX);
+
+    ;WITH CTE_DenailMaster AS
+    (
+        SELECT
+            VisitNumber,
+            CPTCodes,
+            PaymentDate = ISNULL(PaymentDate, TRY_CONVERT(date, PaymentDate)),
+            -- Aggregate descriptions per Visit + CPT + PaymentDate
+            DenialDescriptionAgg =
+                STRING_AGG(CAST(DenialDescription AS NVARCHAR(MAX)), ';')
+        FROM dbo.DenialTrackingMaster
+        WHERE VisitNumber       = @visitno
+          AND DenialDescription IS NOT NULL
+        GROUP BY VisitNumber,
+                 CPTCodes,
+                 ISNULL(PaymentDate, TRY_CONVERT(date, PaymentDate))
+    ),
+    CTE_Denial AS
+    (
+        SELECT
+            VisitNumber,
+            CPTCodes,
+            PaymentDate,
+            DenialDescriptionAgg,
+            ROW_NUMBER() OVER
+            (
+                PARTITION BY VisitNumber, CPTCodes
+                ORDER BY PaymentDate DESC
+            ) AS RowNumByLatestPayment
+        FROM CTE_DenailMaster
+    ),
+
+    -- Use only the latest PaymentDate per Visit + CPT
+    LatestRows AS
+    (
+        SELECT *
+        FROM CTE_Denial
+        WHERE RowNumByLatestPayment = 1
+    ),
+
+    -- Parse each "CODE: description" segment from DenialDescriptionAgg
+    Parsed AS
+    (
+        SELECT DISTINCT
+            Segment  = v.CleanValue,                             -- full "CO129: ...", "CO143: ...", etc.
+            CodeRaw  = LEFT(v.CleanValue, ca.ColonPos - 1),      -- "CO129"
+            CodeNorm = REPLACE(LEFT(v.CleanValue, ca.ColonPos - 1), ' ', '')  -- "CO129", "CO143", etc.
+        FROM LatestRows d
+        CROSS APPLY STRING_SPLIT(d.DenialDescriptionAgg, ';') s
+        CROSS APPLY (SELECT LTRIM(RTRIM(s.value)) AS CleanValue) v
+        CROSS APPLY (
+            -- Always find a colon by appending ':' so CHARINDEX >= 1
+            SELECT CHARINDEX(':', v.CleanValue + ':') AS ColonPos
+        ) ca
+        WHERE v.CleanValue <> ''
+          AND ca.ColonPos > 1   -- ensure at least 1 char before ':'
+    ),
+
+    -- Apply the same omit list as in GetDenailCodeByVisitNumber, keep distinct segments
+    Filtered AS
+    (
+        SELECT DISTINCT
+            CodeNorm,
+            Segment
+        FROM Parsed
+        WHERE CodeNorm NOT IN (
+              'CO45','CO253','CO1','CO2','CO3',
+              'PR1','PR2','PR3','PR45','PR253',
+              'PI45','PI1','PI2','PI3','PI253',
+              'CO 45','CO 253','CO 1','CO 2','CO 3',
+              'PR 1','PR 2','PR 3','PR 45','PR 253',
+              'PI 253','PI 45','PI 1','PI 2','PI 3'
+        )
+    )
+
+    -- Final agg: distinct "Code:Description" segments, ; separated
+    SELECT @Result =
+        STRING_AGG(
+            CAST(Segment AS NVARCHAR(MAX)),    -- LOB type avoids 8000-byte limit
+            '; '
+        ) WITHIN GROUP (ORDER BY CodeNorm)
+    FROM Filtered;
+
+    RETURN @Result;
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[GetDenialCodeDescByVisitCPT]******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   FUNCTION [dbo].[GetDenialCodeDescByVisitCPT]
+(
+    @visitno VARCHAR(100),
+	@CPTCode VARCHAR(50)
+)
+RETURNS NVARCHAR(MAX)
+AS
+BEGIN
+    DECLARE @Result NVARCHAR(MAX);
+
+    ;WITH CTE_DenailMaster AS
+    (
+        SELECT
+            VisitNumber,
+            CPTCodes,
+            PaymentDate = ISNULL(PaymentDate, TRY_CONVERT(date, PaymentDate)),
+            -- Aggregate descriptions per Visit + CPT + PaymentDate
+            DenialDescriptionAgg =
+                STRING_AGG(CAST(DenialDescription AS NVARCHAR(MAX)), ';')
+        FROM dbo.DenialTrackingMaster
+        WHERE VisitNumber       = @visitno and CPTCodes = @CPTCode
+          AND DenialDescription IS NOT NULL
+        GROUP BY VisitNumber,
+                 CPTCodes,
+                 ISNULL(PaymentDate, TRY_CONVERT(date, PaymentDate))
+    ),
+    CTE_Denial AS
+    (
+        SELECT
+            VisitNumber,
+            CPTCodes,
+            PaymentDate,
+            DenialDescriptionAgg,
+            ROW_NUMBER() OVER
+            (
+                PARTITION BY VisitNumber, CPTCodes
+                ORDER BY PaymentDate DESC
+            ) AS RowNumByLatestPayment
+        FROM CTE_DenailMaster
+    ),
+
+    -- Use only the latest PaymentDate per Visit + CPT
+    LatestRows AS
+    (
+        SELECT *
+        FROM CTE_Denial
+        WHERE RowNumByLatestPayment = 1
+    ),
+
+    -- Parse each "CODE: description" segment from DenialDescriptionAgg
+    Parsed AS
+    (
+        SELECT DISTINCT
+            Segment  = v.CleanValue,                             -- full "CO129: ...", "CO143: ...", etc.
+            CodeRaw  = LEFT(v.CleanValue, ca.ColonPos - 1),      -- "CO129"
+            CodeNorm = REPLACE(LEFT(v.CleanValue, ca.ColonPos - 1), ' ', '')  -- "CO129", "CO143", etc.
+        FROM LatestRows d
+        CROSS APPLY STRING_SPLIT(d.DenialDescriptionAgg, ';') s
+        CROSS APPLY (SELECT LTRIM(RTRIM(s.value)) AS CleanValue) v
+        CROSS APPLY (
+            -- Always find a colon by appending ':' so CHARINDEX >= 1
+            SELECT CHARINDEX(':', v.CleanValue + ':') AS ColonPos
+        ) ca
+        WHERE v.CleanValue <> ''
+          AND ca.ColonPos > 1   -- ensure at least 1 char before ':'
+    ),
+
+    -- Apply the same omit list as in GetDenailCodeByVisitNumber, keep distinct segments
+    Filtered AS
+    (
+        SELECT DISTINCT
+            CodeNorm,
+            Segment
+        FROM Parsed
+        WHERE CodeNorm NOT IN (
+              'CO45','CO253','CO1','CO2','CO3',
+              'PR1','PR2','PR3','PR45','PR253',
+              'PI45','PI1','PI2','PI3','PI253',
+              'CO 45','CO 253','CO 1','CO 2','CO 3',
+              'PR 1','PR 2','PR 3','PR 45','PR 253',
+              'PI 253','PI 45','PI 1','PI 2','PI 3'
+        )
+    )
+
+    -- Final agg: distinct "Code:Description" segments, ; separated
+    SELECT @Result =
+        STRING_AGG(
+            CAST(Segment AS NVARCHAR(MAX)),    -- LOB type avoids 8000-byte limit
+            '; '
+        ) WITHIN GROUP (ORDER BY CodeNorm)
+    FROM Filtered;
+
+    RETURN @Result;
+END
+GO
 /****** Object:  UserDefinedFunction [dbo].[GetOriginalDenailCodeByVisitCPT]******/
 SET ANSI_NULLS ON
 GO
@@ -1415,6 +1643,45 @@ END
 
  
 GO
+/****** Object:  UserDefinedFunction [dbo].[SplitString]******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+	CREATE FUNCTION [dbo].[SplitString]
+    (
+        @String NVARCHAR(MAX),
+        @Delimiter CHAR(1)
+    )
+    RETURNS @Output TABLE (
+        Item NVARCHAR(1000),
+        ItemIndex INT
+    )
+    AS
+    BEGIN
+        DECLARE @StartIndex INT, @EndIndex INT, @Index INT = 0
+        
+        SET @StartIndex = 1
+        IF SUBSTRING(@String, LEN(@String) - 1, LEN(@String)) <> @Delimiter
+        BEGIN
+            SET @String = @String + @Delimiter
+        END
+        
+        WHILE CHARINDEX(@Delimiter, @String) > 0
+        BEGIN
+            SET @EndIndex = CHARINDEX(@Delimiter, @String)
+            
+            INSERT INTO @Output(Item, ItemIndex)
+            VALUES(SUBSTRING(@String, @StartIndex, @EndIndex - 1), @Index)
+            
+            SET @Index = @Index + 1
+            SET @String = SUBSTRING(@String, @EndIndex + 1, LEN(@String))
+        END
+        
+        RETURN
+    END
+GO
 /****** Object:  Table [dbo].[BillingMaster]******/
 SET ANSI_NULLS ON
 GO
@@ -1478,11 +1745,13 @@ CREATE TABLE [dbo].[BillingMaster](
 	[DenialCode] [nvarchar](50) NULL,
 	[DenialPostedDate] [date] NULL,
 	[LISPanel] [nvarchar](255) NULL,
+	[DenialDescription] [nvarchar](max) NULL,
+	[OriginalDenailCode] [nvarchar](255) NULL,
  CONSTRAINT [PK_BillingMaster] PRIMARY KEY CLUSTERED 
 (
 	[BillingMasterID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = ON) ON [PRIMARY]
-) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
 /****** Object:  Table [dbo].[DenialTrackingMaster]******/
 SET ANSI_NULLS ON
@@ -1513,11 +1782,12 @@ CREATE TABLE [dbo].[DenialTrackingMaster](
 	[CreateOn] [datetime] NULL,
 	[UpdatedOn] [datetime] NULL,
 	[BillingLab] [nvarchar](30) NULL,
+	[DenialDescription] [nvarchar](max) NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[DenailTrackID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
 /****** Object:  UserDefinedFunction [dbo].[fn_GetClaimStatusByVisitAndCPT]******/
 SET ANSI_NULLS ON
@@ -1843,11 +2113,17 @@ CREATE TABLE [dbo].[ClaimsLevelStatus](
 	[DenialPostedDate] [date] NULL,
 	[PanelCode] [nvarchar](50) NULL,
 	[LISPanel] [nvarchar](255) NULL,
+	[AccessionNo] [nvarchar](50) NULL,
+	[DenialDescription] [nvarchar](max) NULL,
+	[CheckDate] [date] NULL,
+	[PaymentPostedDate] [date] NULL,
+	[CheckNumber] [nvarchar](255) NULL,
+	[CPTCodeWithUnits] [nvarchar](1000) NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[VisitNumber] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
 /****** Object:  Table [dbo].[ClaimsProdStatus]******/
 SET ANSI_NULLS ON
@@ -1993,6 +2269,28 @@ CREATE TABLE [dbo].[CustomCollectionStaging](
 PRIMARY KEY CLUSTERED 
 (
 	[CCWId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[DenialMasterTable]******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[DenialMasterTable](
+	[DenialMasterID] [int] IDENTITY(1,1) NOT NULL,
+	[DenialCode] [varchar](50) NOT NULL,
+	[DenialDescription] [nvarchar](1000) NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[ModifiedDate] [datetime] NULL,
+	[DenialCodeWoPrefix] [nvarchar](50) NULL,
+ CONSTRAINT [PK_DenialMasterTable] PRIMARY KEY CLUSTERED 
+(
+	[DenialMasterID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_DenialCode] UNIQUE NONCLUSTERED 
+(
+	[DenialCode] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
@@ -2953,6 +3251,8 @@ ALTER TABLE [dbo].[CPTCodeMaster] ADD  DEFAULT (getdate()) FOR [CreatedOn]
 GO
 ALTER TABLE [dbo].[CustomCollectionStaging] ADD  DEFAULT (getdate()) FOR [ImpotedOn]
 GO
+ALTER TABLE [dbo].[DenialMasterTable] ADD  DEFAULT (getdate()) FOR [CreatedDate]
+GO
 ALTER TABLE [dbo].[DenialTrackingMaster] ADD  DEFAULT (getdate()) FOR [CreateOn]
 GO
 ALTER TABLE [dbo].[DenialTrackingMaster] ADD  DEFAULT (getdate()) FOR [UpdatedOn]
@@ -3779,7 +4079,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE   PROC [dbo].[sp_ClaimLevelStatusUpdate]
 AS
 BEGIN
@@ -3854,113 +4153,182 @@ BEGIN
             PatientBalance,
             TotalBalance,
             ClaimDenailCode,
-    CASE
--------Rule Id : 1 Fully Adjusted	First Billed Date = Date AND Total Charge = Carrier WO or Total Charge = Carrier WO + Patient WO or Total Charge = Patient WO AND Denial Code = Blank
-WHEN FirstBillDate IS NOT NULL and (BilledAmount = InsuranceAdjustment OR BilledAmount = (InsuranceAdjustment + PatientAdjustment) OR BilledAmount = PatientAdjustment) and ClaimDenailCode IS NULL THEN 'Fully Adjusted' 
+		CASE
+		-------Rule Id : 1 Fully Adjusted	First Billed Date = Date AND Total Charge = Carrier WO or Total Charge = Carrier WO + Patient WO or Total Charge = Patient WO AND Denial Code = Blank
+		WHEN FirstBillDate IS NOT NULL and (BilledAmount = InsuranceAdjustment OR BilledAmount = (InsuranceAdjustment + PatientAdjustment) OR BilledAmount = PatientAdjustment) and ClaimDenailCode IS NULL THEN 'Fully Adjusted' 
 
--------Rule Id : 2 Fully Denied	First Billed Date = Date AND Denial Code = Code AND Total Charge = Carrier Balance
-WHEN FirstBillDate IS NOT NULL and ClaimDenailCode is not null and BilledAmount = InsuranceBalance  THEN 'Fully Denied' 
+		-------Rule Id : 2 Fully Denied	First Billed Date = Date AND Denial Code = Code AND Total Charge = Carrier Balance
+		WHEN FirstBillDate IS NOT NULL and ClaimDenailCode is not null and BilledAmount = InsuranceBalance  THEN 'Fully Denied' 
 
--------Rule Id : 3 Fully Paid	First Billed Date = Date AND Carrier Payment > 0 AND Carrier Balance = 0 AND CPT not equal to 99999
-WHEN FirstBillDate IS NOT NULL and InsurancePayment > 0 and InsuranceBalance = 0 and CPTCode NOT LIKE '%99999%' THEN 'Fully Paid'
+		-------Rule Id : 3 Fully Paid	First Billed Date = Date AND Carrier Payment > 0 AND Carrier Balance = 0 AND CPT not equal to 99999
+		WHEN FirstBillDate IS NOT NULL and InsurancePayment > 0 and InsuranceBalance = 0 and CPTCode NOT LIKE '%99999%' THEN 'Fully Paid'
 
--------Rule Id : 4 Partially Paid	First Billed Date = Date AND CPT code is not equal to 99999 AND Carrier Payment > 0 AND Carrier Balance > 0
-WHEN FirstBillDate IS NOT NULL and CPTCode NOT LIKE '%99999%' and InsurancePayment > 0 and InsuranceBalance > 0 THEN 'Partially Paid'
+		-------Rule Id : 4 Partially Paid	First Billed Date = Date AND CPT code is not equal to 99999 AND Carrier Payment > 0 AND Carrier Balance > 0
+		WHEN FirstBillDate IS NOT NULL and CPTCode NOT LIKE '%99999%' and InsurancePayment > 0 and InsuranceBalance > 0 THEN 'Partially Paid'
 
--------Rule Id : 5 No Response	First Billed Date = Date AND CPT Code is not Equal to 99999 AND Denial Code = Blank AND Total Charge = Carrier Balance
-WHEN FirstBillDate IS NOT NULL and CPTCode NOT LIKE '%99999%' and ClaimDenailCode is null and BilledAmount = InsuranceBalance THEN 'No Response'
+		-------Rule Id : 5 No Response	First Billed Date = Date AND CPT Code is not Equal to 99999 AND Denial Code = Blank AND Total Charge = Carrier Balance
+		WHEN FirstBillDate IS NOT NULL and CPTCode NOT LIKE '%99999%' and ClaimDenailCode is null and BilledAmount = InsuranceBalance THEN 'No Response'
 
--------Rule Id : 6 No Response - Client	Total Charge = Carrier Balance AND Denial Code = Blank AND CPT = 99999
-WHEN  CPTCode LIKE '%99999%' and ClaimDenailCode is null and BilledAmount = InsuranceBalance THEN 'No Response - Client'
+		-------Rule Id : 6 No Response - Client	Total Charge = Carrier Balance AND Denial Code = Blank AND CPT = 99999
+		WHEN  CPTCode LIKE '%99999%' and ClaimDenailCode is null and BilledAmount = InsuranceBalance THEN 'No Response - Client'
 
--------Rule Id : 7 Paid To Client	Carrier Payment > 0 AND Carrier Balance = 0 AND CPT = 99999
-WHEN InsurancePayment > 0 and InsuranceBalance = 0 and CPTCode LIKE '%99999%'  THEN 'Paid To Client'
+		-------Rule Id : 7 Paid To Client	Carrier Payment > 0 AND Carrier Balance = 0 AND CPT = 99999
+		WHEN InsurancePayment > 0 and InsuranceBalance = 0 and CPTCode LIKE '%99999%'  THEN 'Paid To Client'
 
--------Rule Id : 8 Patient Responsibility	First Billed = Date AND Carrier Payment = 0 AND Patient Payment = 0 AND Carrier Balance = 0  AND Patient Balance > 0
-WHEN FirstBillDate IS NOT NULL and  InsurancePayment = 0 and PatientPaidAmount = 0 and InsuranceBalance = 0 and PatientBalance > 0  and CPTCode NOT LIKE '%99999%' THEN 'Patient Responsibility'
+		-------Rule Id : 8 Patient Responsibility	First Billed = Date AND Carrier Payment = 0 AND Patient Payment = 0 AND Carrier Balance = 0  AND Patient Balance > 0
+		WHEN FirstBillDate IS NOT NULL and  InsurancePayment = 0 and PatientPaidAmount = 0 and InsuranceBalance = 0 and PatientBalance > 0  and CPTCode NOT LIKE '%99999%' THEN 'Patient Responsibility'
 
--------Rule Id : 9 Patient Responsibility - Client	First Billed = Date AND Carrier Payment = 0 AND Patient Payment = 0 AND Carrier Balance = 0  AND Patient Balance > 0 AND CPT Code = 99999
-WHEN FirstBillDate IS NOT NULL and  InsurancePayment = 0 and PatientPaidAmount = 0 and InsuranceBalance = 0 and PatientBalance > 0 and CPTCode LIKE '%99999%'  THEN 'Patient Responsibility - Client'
+		-------Rule Id : 9 Patient Responsibility - Client	First Billed = Date AND Carrier Payment = 0 AND Patient Payment = 0 AND Carrier Balance = 0  AND Patient Balance > 0 AND CPT Code = 99999
+		WHEN FirstBillDate IS NOT NULL and  InsurancePayment = 0 and PatientPaidAmount = 0 and InsuranceBalance = 0 and PatientBalance > 0 and CPTCode LIKE '%99999%'  THEN 'Patient Responsibility - Client'
 
--------Rule Id : 10 Partially Denied   FIRST Billed = Date AND Denial Code = Code AND Carrier Payment = 0 AND Patient Payment = 0 AND Carrier Balance > 0  AND Total Charge > Carrier Balance 
--------AND Total Balance =Carrier Balance
-WHEN FirstBillDate IS NOT NULL and ClaimDenailCode is not null and  InsurancePayment = 0 and PatientPaidAmount = 0 AND InsuranceBalance > 0 and BilledAmount > InsuranceBalance 
-and TotalBalance = InsuranceBalance THEN 'Partially Denied'
+		-------Rule Id : 10 Partially Denied   FIRST Billed = Date AND Denial Code = Code AND Carrier Payment = 0 AND Patient Payment = 0 AND Carrier Balance > 0  AND Total Charge > Carrier Balance 
+		-------AND Total Balance =Carrier Balance
+		WHEN FirstBillDate IS NOT NULL and ClaimDenailCode is not null and  InsurancePayment = 0 and PatientPaidAmount = 0 AND InsuranceBalance > 0 and BilledAmount > InsuranceBalance 
+		and TotalBalance = InsuranceBalance THEN 'Partially Denied'
 
--------Rule Id : 11 Patient Payment	First Billed = Date AND Carrier Payment = 0 AND Patient Payment > 0 AND Carrier Balance = 0
-WHEN FirstBillDate IS NOT NULL and InsurancePayment = 0 and PatientPaidAmount > 0 and InsuranceBalance = 0 THEN 'Patient Payment'
+		-------Rule Id : 11 Patient Payment	First Billed = Date AND Carrier Payment = 0 AND Patient Payment > 0 AND Carrier Balance = 0
+		WHEN FirstBillDate IS NOT NULL and InsurancePayment = 0 and PatientPaidAmount > 0 and InsuranceBalance = 0 THEN 'Patient Payment'
 
--------Rule Id : 12 Unbilled	First Billed = Blank AND Total Charge = Carrier Balance AND CPT Code not equal to 99999
-WHEN FirstBillDate IS NULL and BilledAmount = InsuranceBalance  and  CPTCode NOT LIKE '%99999%' THEN 'Unbilled'
+		-------Rule Id : 12 Unbilled	First Billed = Blank AND Total Charge = Carrier Balance or Total Charge = Carrier Balance + Patient WO AND CPT Code not equal to 99999
+		WHEN FirstBillDate IS NULL and (BilledAmount = InsuranceBalance OR BilledAmount = (InsuranceBalance + PatientAdjustment)) and  CPTCode NOT LIKE '%99999%' THEN 'Unbilled'
 
--------Rule Id : 13 Fully Adjusted	First Billed = Blank AND Total Charge = Carrier WO or Total Charge = Patient WO or Total Charge = Carrier WO + Patient WO AND CPT Code not equal to 99999
-WHEN FirstBillDate IS NULL and BilledAmount = InsuranceAdjustment OR BilledAmount = PatientAdjustment  OR BilledAmount = (InsuranceAdjustment + PatientAdjustment) AND CPTCode NOT LIKE '%99999%' 
-THEN 'Fully Adjusted'
+		-------Rule Id : 13 Fully Adjusted	First Billed = Blank AND Total Charge = Carrier WO or Total Charge = Patient WO or Total Charge = Carrier WO + Patient WO AND CPT Code not equal to 99999
+		WHEN FirstBillDate IS NULL and (BilledAmount = InsuranceAdjustment OR BilledAmount = PatientAdjustment  OR BilledAmount = (InsuranceAdjustment + PatientAdjustment)) AND CPTCode NOT LIKE '%99999%' 
+		THEN 'Fully Adjusted'
 
--------Rule Id : 14 Unbilled - Client	First Billed = Blank  AND CPT code = 99999 AND Total Charge = Carrier Balance
-WHEN FirstBillDate IS NULL and  CPTCode LIKE '%99999%' and BilledAmount = InsuranceBalance  THEN 'Unbilled - Client'
+		-------Rule Id : 14 Unbilled - Client	First Billed = Blank  AND CPT code = 99999 AND Total Charge = Carrier Balance
+		WHEN FirstBillDate IS NULL and  CPTCode LIKE '%99999%' and BilledAmount = InsuranceBalance  THEN 'Unbilled - Client'
 
--------Rule Id : 15  Partially Adjusted	First Billed = Date AND Carrier Payment = 0 AND Patient Payment = 0 AND  Carrier WO > 0 AND Carrier Balance > 0 AND Denial Code = Blank
-WHEN FirstBillDate IS NOT NULL AND InsurancePayment = 0 AND PatientPaidAmount = 0 AND InsuranceAdjustment > 0 AND InsuranceBalance > 0 AND ClaimDenailCode IS NULL THEN 'Partially Adjusted'
+		-------Rule Id : 15  Partially Adjusted	First Billed = Date AND Carrier Payment = 0 AND Patient Payment = 0 AND  Carrier WO > 0 AND Carrier Balance > 0 AND Denial Code = Blank
+		WHEN FirstBillDate IS NOT NULL AND InsurancePayment = 0 AND PatientPaidAmount = 0 AND InsuranceAdjustment > 0 AND InsuranceBalance > 0 AND ClaimDenailCode IS NULL THEN 'Partially Adjusted'
 
--------Rule Id : 16 Patient Payment	First Billed Date = Blank AND Carrier Payment = 0 AND Patient Payment > 0 AND Patient WO > = 0
-WHEN FirstBillDate IS NULL AND InsurancePayment = 0 AND PatientPaidAmount > 0 AND PatientAdjustment >= 0 THEN 'Patient Payment'
+		-------Rule Id : 16 Patient Payment	First Billed Date = Blank AND Carrier Payment = 0 AND Patient Payment > 0 AND Patient WO > = 0
+		WHEN FirstBillDate IS NULL AND InsurancePayment = 0 AND PatientPaidAmount > 0 AND PatientAdjustment >= 0 THEN 'Patient Payment'
 
--------Rule Id : 17 Unbilled - Patient Balance	First Billed Date = Blank AND Carrier Payment = 0 AND Patient Balance > 0 AND Patient WO > = 0
-WHEN FirstBillDate IS NULL AND InsurancePayment = 0 AND PatientBalance > 0 AND PatientAdjustment >= 0 THEN 'Unbilled - Patient Balance'
+		-------Rule Id : 17 Unbilled - Patient Balance	First Billed Date = Blank AND Carrier Payment = 0 AND Patient Balance > 0 AND Patient WO > = 0
+		WHEN FirstBillDate IS NULL AND InsurancePayment = 0 AND PatientBalance > 0 AND PatientAdjustment >= 0 THEN 'Unbilled - Patient Balance'
 
--------Rule Id : 18	Partial Patient Payment	First Billed = Date AND Carrier Payment = 0 AND Patient Payment > 0 AND Carrier Balance > 0  and Patient Balance = 0
-WHEN FirstBillDate IS NOT NULL AND InsurancePayment = 0 AND PatientPaidAmount > 0 AND InsuranceBalance > 0 AND PatientBalance = 0 THEN 'Partial Patient Payment'
+		-------Rule Id : 18	Partial Patient Payment	First Billed = Date AND Carrier Payment = 0 AND Patient Payment > 0 AND Carrier Balance > 0  and Patient Balance = 0
+		WHEN FirstBillDate IS NOT NULL AND InsurancePayment = 0 AND PatientPaidAmount > 0 AND InsuranceBalance > 0 AND PatientBalance = 0 THEN 'Partial Patient Payment'
 
--------Rule Id : 19 Unbilled - Patient WO	First Billed Date = Blank AND Carrier Payment = 0 AND TotalCharge=Patient WO
-WHEN FirstBillDate IS NULL AND InsurancePayment = 0 AND BilledAmount =  PatientAdjustment  THEN 'Unbilled - Patient WO'
+		-------Rule Id : 19 Unbilled - Patient WO	First Billed Date = Blank AND Carrier Payment = 0 AND TotalCharge=Patient WO
+		WHEN FirstBillDate IS NULL AND InsurancePayment = 0 AND BilledAmount =  PatientAdjustment  THEN 'Unbilled - Patient WO'
 
--------Rule Id :20	Partially Denied	First Billed = Date AND Denial Code = Code AND Carrier Payment = 0 AND Patient Payment = 0 AND Carrier Balance > 0  and Patient Balance > 0 
-WHEN FirstBillDate IS NOT NULL AND ClaimDenailCode IS NOT NULL AND InsurancePayment = 0 AND PatientPaidAmount = 0 and InsuranceBalance > 0 and PatientBalance > 0 THEN 'Partially Denied'
+		-------Rule Id :20	Partially Denied	First Billed = Date AND Denial Code = Code AND Carrier Payment = 0 AND Patient Payment = 0 AND Carrier Balance > 0  and Patient Balance > 0 
+		WHEN FirstBillDate IS NOT NULL AND ClaimDenailCode IS NOT NULL AND InsurancePayment = 0 AND PatientPaidAmount = 0 and InsuranceBalance > 0 and PatientBalance > 0 THEN 'Partially Denied'
 
--------Rule Id :21	Partially Paid	First Billed Date = Date AND CPT code is not equal to 99999 AND Carrier Payment > 0 AND Carrier Balance = 0 AND Patient Balance > 0
-WHEN FirstBillDate IS NOT NULL AND CPTCode NOT LIKE '%99999%' AND InsurancePayment > 0 AND InsuranceBalance = 0 AND PatientBalance > 0  THEN 'Partially Paid'
+		-------Rule Id :21	Partially Paid	First Billed Date = Date AND CPT code is not equal to 99999 AND Carrier Payment > 0 AND Carrier Balance = 0 AND Patient Balance > 0
+		WHEN FirstBillDate IS NOT NULL AND CPTCode NOT LIKE '%99999%' AND InsurancePayment > 0 AND InsuranceBalance = 0 AND PatientBalance > 0  THEN 'Partially Paid'
 
--------Rule Id :22	Patient Payment	First Billed = Date AND Carrier Payment = 0 AND Patient Payment > 0 AND Carrier Balance > 0
-WHEN FirstBillDate IS NOT NULL AND InsurancePayment = 0 AND PatientPaidAmount > 0 AND InsuranceBalance > 0 THEN 'Patient Payment'
+		-------Rule Id :22	Patient Payment	First Billed = Date AND Carrier Payment = 0 AND Patient Payment > 0 AND Carrier Balance > 0
+		WHEN FirstBillDate IS NOT NULL AND InsurancePayment = 0 AND PatientPaidAmount > 0 AND InsuranceBalance > 0 THEN 'Patient Payment'
 
--------Rule Id :23	Partial Patient Responsibility	First Billed = Date AND Carrier Payment = 0 AND Patient Payment = 0 AND Carrier Balance = 0 or >0 AND Patient Balance > 0 No Denial code
-WHEN FirstBillDate IS NOT NULL AND InsurancePayment = 0 AND PatientPaidAmount = 0 AND InsuranceBalance >= 0 AND PatientBalance > 0 AND ClaimDenailCode IS NULL  THEN 'Partial Patient Responsibility'
+		-------Rule Id :23	Partial Patient Responsibility	First Billed = Date AND Carrier Payment = 0 AND Patient Payment = 0 AND Carrier Balance = 0 or >0 AND Patient Balance > 0 No Denial code
+		WHEN FirstBillDate IS NOT NULL AND InsurancePayment = 0 AND PatientPaidAmount = 0 AND InsuranceBalance >= 0 AND PatientBalance > 0 AND ClaimDenailCode IS NULL  THEN 'Partial Patient Responsibility'
 
-ELSE 'Un Categorized' END ClaimStatus,
+		ELSE 'Un Categorized' END ClaimStatus,
             GETDATE(),OriginalDenailCode,ICD.ICD10Code,DT.DenialDate
         FROM #BillingMaster BM
         LEFT JOIN #DenailTracker DT ON BM.VisitNumber = DT.VisitNumber
         LEFT JOIN #CptCodes CPT ON BM.VisitNumber = CPT.VisitNumber
 		LEFT JOIN #ICDCode ICD ON BM.VisitNumber = ICD.VisitNumber;
 
-		UPDATE ClaimsLevelStatus SET PanelCode = CASE 
-    WHEN  CPTCodes LIKE '%80307%'
-       OR CPTCodes LIKE '%G0480%'
-       OR CPTCodes LIKE '%G0481%'
-       OR CPTCodes LIKE '%G0482%'
-    THEN 'Toxicology'
 
-    WHEN  CPTCodes LIKE '%87486%'
-       OR CPTCodes LIKE '%87541%'
-       OR CPTCodes LIKE '%87563%'
-       OR CPTCodes LIKE '%87631%'
-       OR CPTCodes LIKE '%87640%'
-       OR CPTCodes LIKE '%87798%'
-       OR CPTCodes LIKE '%87481%'
-       OR CPTCodes LIKE '%87651%'
-       OR CPTCodes LIKE '%87653%'
-       OR CPTCodes LIKE '%87500%'
-       OR CPTCodes LIKE '%87641%'
-    THEN 'UTI Panel'
 
-    ELSE NULL
-END ;
+		
+		;WITH SplitDenials AS
+		(
+			SELECT
+				cls.VisitNumber,
+				d.DenialCode,
+				d.DenialDescription,
+				-- Normalize description so CO171 / PR171 collapse into same bucket
+				DenialDescriptionKey =
+					LOWER(
+						CASE
+							WHEN RIGHT(RTRIM(d.DenialDescription), 1) = '.'
+								 THEN LEFT(RTRIM(d.DenialDescription),
+										   LEN(RTRIM(d.DenialDescription)) - 1)
+							ELSE RTRIM(d.DenialDescription)
+						END
+					)
+			FROM ClaimsLevelStatus cls
+			CROSS APPLY STRING_SPLIT(cls.DenailCode, ';') s
+			INNER JOIN DenialMasterTable d
+				ON d.DenialCode = LTRIM(RTRIM(s.value))
+		),
+		CodesPerDescription AS
+		(
+			SELECT
+				VisitNumber,
+				DenialDescriptionKey,
+				-- pick one “real” description to display (e.g. MIN)
+				DisplayDescription = MIN(DenialDescription),
+				Codes = STRING_AGG(DenialCode, ' , ')
+						WITHIN GROUP (ORDER BY DenialCode)
+			FROM SplitDenials
+			GROUP BY VisitNumber, DenialDescriptionKey
+		),
+		Chunks AS
+		(
+			SELECT
+				VisitNumber,
+				Chunk = CONCAT(Codes, ' - ', DisplayDescription)
+			FROM CodesPerDescription
+		)
+		SELECT
+			VisitNumber,
+			DenialSummary =
+				STRING_AGG(Chunk, ' , ')
+				WITHIN GROUP (ORDER BY Chunk)
+				INTO #DenialDesc
+		FROM Chunks
+		GROUP BY VisitNumber;
 
-UPDATE CS SET CS.LISPanel = ISNULL(LIS.PanelCode,'Unable to Locate')FROM ClaimsLevelStatus CS
-JOIN LISMaster LIS ON CS.VisitNumber = LIS.VisitNumberIH
+
+		CREATE NONCLUSTERED INDEX IX_VisitNumber_DC ON #DenialDesc (VisitNumber);
+
+
+		UPDATE CLS SET CLS.DenialDescription = DC.DenialSummary  FROM ClaimsLevelStatus CLS
+		JOIN #DenialDesc DC ON CLS.VisitNumber = DC.VisitNumber 
+
+		;WITH CTE_TransDate AS(SELECT VisitNumber,ROW_NUMBER() OVER (PARTITION BY VisitNumber ORDER BY CheckDate DESC, PaymentPostedDate DESC) AS rn,
+		CheckDate,PaymentPostedDate,CheckNumber FROM BillingMaster where CheckDate is not null) SELECT VisitNumber,CheckDate,PaymentPostedDate,CheckNumber 
+		INTO #TransData FROM CTE_TransDate Where rn = 1 ;
+
+		CREATE NONCLUSTERED INDEX IX_VisitNumber_TR ON #TransData (VisitNumber);
+
+
+		UPDATE CLS SET CLS.CheckDate = DC.CheckDate,CLS.CheckNumber = DC.CheckNumber,CLS.PaymentPostedDate = DC.PaymentPostedDate  FROM ClaimsLevelStatus CLS
+		JOIN #TransData DC ON CLS.VisitNumber = DC.VisitNumber 
+
+
+		;WITH GroupedCPT AS (
+        SELECT VisitNumber, CPTCode, SUM(Units) AS Units
+        FROM BillingMaster bm
+        GROUP BY bm.VisitNumber, bm.CPTCode
+		),
+		AggregatedCPT AS (
+			SELECT VisitNumber,
+				STRING_AGG(CAST(CPTCode AS VARCHAR(20)) + 
+					(CASE WHEN ISNULL(Units,0) = 0 THEN '' ELSE '* ' + CAST(ISNULL(Units,0) AS VARCHAR(10)) END), ', ') AS CPTCode
+			FROM GroupedCPT
+			GROUP BY VisitNumber
+		) SELECT * INTO #CPTCodesUnits FROM AggregatedCPT
+
+
+		UPDATE CLS SET CLS.CPTCodeWithUnits = DC.CPTCode  FROM ClaimsLevelStatus CLS
+		JOIN #CPTCodesUnits DC ON CLS.VisitNumber = DC.VisitNumber 
+
+		UPDATE CBD SET CBD.AccessionNo = BM.AccessionNo FROM ClaimsLevelStatus CBD
+		JOIN LISMaster BM ON CBD.VisitNumber = BM.VisitNumberIH;
+
+		UPDATE CBD SET CBD.AccessionNo = BM.AccessionNo FROM ClaimsLevelStatus CBD
+		JOIN BillingMaster BM ON CBD.VisitNumber = BM.VisitNumber;
 
         COMMIT TRAN;
+
+		EXEC SP_UpdatePanelDetail_Billing;
 
     END TRY
     BEGIN CATCH
@@ -3982,6 +4350,72 @@ JOIN LISMaster LIS ON CS.VisitNumber = LIS.VisitNumberIH
     END CATCH
 END;
 GO
+/****** Object:  StoredProcedure [dbo].[sp_DenailDescrpUpdateByVisitCPT]******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Proc [dbo].[sp_DenailDescrpUpdateByVisitCPT]
+AS BEGIN
+
+;WITH SplitDenials AS
+(
+    SELECT
+        cls.VisitNumber,CPTCode,
+        d.DenialCode,
+        d.DenialDescription,
+        -- Normalize description so CO171 / PR171 collapse into same bucket
+        DenialDescriptionKey =
+            LOWER(
+                CASE
+                    WHEN RIGHT(RTRIM(d.DenialDescription), 1) = '.'
+                         THEN LEFT(RTRIM(d.DenialDescription),
+                                   LEN(RTRIM(d.DenialDescription)) - 1)
+                    ELSE RTRIM(d.DenialDescription)
+                END
+            )
+    FROM Billingmaster cls
+    CROSS APPLY STRING_SPLIT(cls.DenialCode, ';') s
+    INNER JOIN DenialMasterTable d
+        ON d.DenialCode = LTRIM(RTRIM(s.value))
+),
+CodesPerDescription AS
+(
+    SELECT
+        VisitNumber,CPTCode,
+        DenialDescriptionKey,
+        -- pick one “real” description to display (e.g. MIN)
+        DisplayDescription = MIN(DenialDescription),
+        Codes = STRING_AGG(DenialCode, ' , ')
+                WITHIN GROUP (ORDER BY DenialCode)
+    FROM SplitDenials
+    GROUP BY VisitNumber, DenialDescriptionKey,CPTCode
+),
+Chunks AS
+(
+    SELECT
+        VisitNumber,CPTCode,
+        Chunk = CONCAT(Codes, ' - ', DisplayDescription)
+    FROM CodesPerDescription
+)
+SELECT
+    VisitNumber,CPTCode,
+    DenialSummary =
+        STRING_AGG(Chunk, ' , ')
+        WITHIN GROUP (ORDER BY Chunk)
+		INTO #DenialDecription
+FROM Chunks
+GROUP BY VisitNumber,CPTCode;
+
+
+CREATE NONCLUSTERED INDEX IX_VisitNumber_DC ON #DenialDecription (VisitNumber);
+
+UPDATE BM SET BM.DenialDescription = DC.DenialSummary  FROM BillingMaster BM
+JOIN #DenialDecription DC ON BM.VisitNumber = DC.VisitNumber  AND BM.CPTCode = DC.CPTCode;
+
+END
+GO
 /****** Object:  StoredProcedure [dbo].[sp_GetCollectionLineLevelReport]******/
 SET ANSI_NULLS ON
 GO
@@ -3993,22 +4427,11 @@ CREATE PROC [dbo].[sp_GetCollectionLineLevelReport]
 AS
 BEGIN
 
-----DROP TABLE IF EXISTS #DenialCodeMaster;
-----SELECT 
-----    VisitNumber,CPTCodes,DBO.[GetDenailCodeByVisitCPT](VisitNumber,CPTCodes) AS PaymentReasonCodes,MAX(PaymentDate) AS MostRecentDenialPostingDate
-----	INTO #DenialCodeMaster
-----FROM DenialTrackingMaster
-----WHERE PaymentReasonCode IS NOT NULL
-----GROUP BY VisitNumber,CPTCodes ORDER BY VisitNumber
-
---CREATE NONCLUSTERED INDEX IX_VisitNumber ON #DenialCodeMaster (VisitNumber,CPTCodes);
-
     SELECT  
         ISNULL(UPPER(b.AccessionNo),'Missing LIS Info') AccessionNo,
         b.VisitNumber,
         b.CPTCode,
         b.PatientName,
-		--RT.RequisitionTypeName,
 		CAST(B.PatientDOB AS DATE) AS  PatientDOB, 
         PanelCarrier PayerName,
         PayerType,
@@ -4019,7 +4442,6 @@ BEGIN
 		CAST(FirstBillDate AS DATE) AS      FirstBillDate,
 		ISNULL(b.PanelCode, 'No Panel Located') AS PanelGroup,
 		ISNULL(b.LISPanel, 'No Panel Located') AS LISPanel,
-		--ISNULL(b.PanelName, 'No Panel Located') AS OrderInfo,
 		POS,
 		TOS,
         b.ICD10Code,
@@ -4031,6 +4453,7 @@ BEGIN
         b.Modifier,
         DenialCode as DenialCode,
 		OrginalDenialCode AS [Orginal Denial Code],
+		DenialDescription,
         b.BilledAmount,
         b.AllowedAmount,
         b.InsurancePayment,
@@ -4044,8 +4467,6 @@ BEGIN
 		l.BillingLab Facility,
 		cm.ClinicName,
 		l.SalesRepEmail SalesPersonName,
-		--og.OperationsGroup,
-		--tt.TestTypeName TestType,
 		ReferringProvider ReferringProviderName,
 		b.ClaimSubStatus BillingSubStatus,
 		CASE WHEN b.AccessionNo is null then 'Missing LIS Data' else '' end LISMissingRecord,
@@ -4053,11 +4474,6 @@ BEGIN
 
     FROM BillingMaster b
     LEFT JOIN LISMaster l ON b.AccessionNo = l.AccessionNo AND l.Entry_Status <> 'Incomplete'
-	--LEFT JOIN #DenialCodeMaster dt on b.VisitNumber = dt.VisitNumber AND b.CPTCode = dt.CPTCodes
-	--LEFT JOIN RequisitionTypes RT on l.RequistionTypeId = RT.RequisitionTypeId
-    --LEFT JOIN OperationsGroupMaster OG ON l.OperationalGroupId = OG.OperationGroupID 
-    --LEFT JOIN TestTypeMaster TT ON l.TestTypeId = TT.TestTypeId
-	--LEFT JOIN SalesPerson SP ON L.SalesPersonId = SP.SalesPersonID
 	LEFT JOIN ClinicMaster CM ON l.ClinicId = CM.ClinicId
 
     WHERE 
@@ -4079,18 +4495,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-	EXEC [SP_UpdatePanelDetail_Billing];
-
-			WITH CTE_TransDate AS(
-		SELECT VisitNumber,ROW_NUMBER() OVER (
-					PARTITION BY VisitNumber
-					ORDER BY CheckDate DESC, PaymentPostedDate DESC
-				) AS rn,
-				CheckDate,PaymentPostedDate,CheckNumber FROM BillingMaster where CheckDate is not null
-				) SELECT VisitNumber,CheckDate,PaymentPostedDate,CheckNumber INTO #TransData FROM CTE_TransDate Where rn = 1 ;
-
-				  CREATE NONCLUSTERED INDEX IX_VisitNumber_TR ON #TransData (VisitNumber);
-    -- Temp tables
+	
     SELECT * INTO #BillingMasterTemp 
     FROM BillingMaster WITH (NOLOCK)
     WHERE (@FromDate IS NULL OR FirstBillDate >= @FromDate) 
@@ -4100,32 +4505,8 @@ BEGIN
 
     CREATE NONCLUSTERED INDEX IX_VisitNumber_BM ON #BillingMasterTemp (VisitNumber);
 
-    --DROP TABLE IF EXISTS #DenialCode;
-    --SELECT DISTINCT VisitNumber, DBO.GetDenailCodeByVisitNumber(VisitNumber) AS DenialCode,MAX(PaymentDate) DenialDate
-    --INTO #DenialCode 
-    --FROM DenialTrackingMaster 
-    --WHERE PaymentReasonCode IS NOT NULL GROUP BY  VisitNumber, DBO.GetDenailCodeByVisitNumber(VisitNumber);
-
-
-    --CREATE NONCLUSTERED INDEX IX_VisitNumber_DC ON #DenialCode (VisitNumber);
-    --CREATE NONCLUSTERED INDEX IX_VisitNumber_ICD ON #ICDCode (VisitNumber);  
-
-    -- Aggregations
-    ;WITH BillingAgg AS (
-        SELECT VisitNumber,
-            SUM(BilledAmount) AS TotalCharge,
-            SUM(AllowedAmount) AS AllowedAmount,
-            SUM(InsurancePayment) AS InsurancePayment,
-            SUM(InsuranceAdjustment) AS InsuranceAdjustment,
-            SUM(PatientPaidAmount) AS PatientPaidAmount,
-            SUM(PatientAdjustment) AS PatientAdjustment,
-            SUM(InsuranceBalance) AS InsuranceBalance,
-            SUM(PatientBalance) AS PatientBalance,
-            SUM(TotalBalance) AS TotalBalance
-        FROM #BillingMasterTemp
-        GROUP BY VisitNumber
-    ),
-    MostFrequentFinancialClass AS (
+    
+    ;WITH MostFrequentFinancialClass AS (
         SELECT VisitNumber, PT.PayerType,
                ROW_NUMBER() OVER (PARTITION BY VisitNumber ORDER BY COUNT(*) DESC) AS rn
         FROM #BillingMasterTemp BM
@@ -4146,18 +4527,6 @@ BEGIN
         WHERE TOS IS NOT NULL
         GROUP BY VisitNumber, TOS
     ),
-    GroupedCPT AS (
-        SELECT bm.VisitNumber, bm.CPTCode, SUM(bm.Units) AS Units
-        FROM #BillingMasterTemp bm
-        GROUP BY bm.VisitNumber, bm.CPTCode
-    ),
-    AggregatedCPT AS (
-        SELECT VisitNumber,
-            STRING_AGG(CAST(CPTCode AS VARCHAR(20)) + 
-                (CASE WHEN ISNULL(Units,0) = 0 THEN '' ELSE '* ' + CAST(ISNULL(Units,0) AS VARCHAR(10)) END), ', ') AS CPTCode
-        FROM GroupedCPT
-        GROUP BY VisitNumber
-    ),
     MainData AS (
         SELECT 
         BM.VisitNumber,
@@ -4165,11 +4534,8 @@ BEGIN
         BM.PayerType,
         BM.BillingProvider,
 		BM.AccessionNo,
-        -- Window function instead of MIN()
         MIN(BM.BeginDOS) OVER (PARTITION BY BM.VisitNumber) AS BeginDOS,
 		MIN(BM.ChargeEntryDate) OVER (PARTITION BY BM.VisitNumber) AS ChargeEntryDate,
-		--MAX(BM.CheckDate) OVER (PARTITION BY BM.VisitNumber) AS CheckDate,
-		--MAX(BM.PaymentPostedDate) OVER (PARTITION BY BM.VisitNumber) AS PaymentPostedDate,
 		BM.PatientDOB,
 		BM.PatientName,
 		BM.ChartNumber,
@@ -4193,15 +4559,12 @@ BEGIN
         ON BM.AccessionNo = LIS.AccessionNo AND LIS.Entry_Status <> 'Incomplete'
     LEFT JOIN TestTypeMaster TT 
         ON LIS.TestTypeId = TT.TestTypeId
-   		--LEFT JOIN RequisitionTypes rt ON LIS.RequistionTypeId = rt.RequisitionTypeId
 		LEFT JOIN ClinicMaster CM ON LIS.ClinicId = CM.ClinicId
-		--LEFT JOIN SalesPerson SP ON LIS.SalesPersonId = SP.SalesPersonID
     )
     SELECT DISTINCT
         md.VisitNumber,
         ISNULL(md.AccessionNo,'Missing LIS Data') AS AccessionNo,
-        --ISNULL(md.PanelName,'No Panel Info') AS PanelName,
-		ISNULL(CPS.PanelCode,'No Panel Info') AS PanelGroup,
+		ISNULL(CPS.PanelCode,'No Panel Info') AS PanelName,
 		ISNULL(CPS.LISPanel,'No Panel Info') AS LISPanel,
 		OrderInfo OrderInfo,
         ISNULL(PayerName,'No Payer Info') AS Carrier,
@@ -4228,38 +4591,39 @@ BEGIN
 		CONVERT(VARCHAR, md.FirstBillDate, 101)  AS FirstBillDate,
 		CONVERT(VARCHAR, MD.ChargeEntryDate, 101)   AS ChargeEntryDate,
 		CONVERT(VARCHAR, CPS.DenialPostedDate, 101)	DenialPostedDate,
-		CONVERT(VARCHAR, TD.CheckDate, 101)	CheckDate,
-		CONVERT(VARCHAR, TD.PaymentPostedDate, 101)	PaymentPostedDate,
-		TD.CheckNumber,
+		CONVERT(VARCHAR, CPS.CheckDate, 101)	CheckDate,
+		CONVERT(VARCHAR, CPS.PaymentPostedDate, 101)	PaymentPostedDate,
+		CPS.CheckNumber,
         CASE WHEN md.FirstBillDate IS NOT NULL THEN 'Billed' ELSE 'Not Billed' END AS BilledNotBilled,
         POS.POS,
         TOS.TOS,
-        AG.CPTCode,
+        CPS.CPTCodeWithUnits CPTCode,
         CPS.ICDCodes AS PrimaryDiagnosis,
         CPS.DenailCode DenialCode,
 		CPS.OrginalDenailCode [Orignal Denial Code],
-        ISNULL(BA.TotalCharge, 0.0) AS TotalCharge,
-        ISNULL(BA.AllowedAmount, 0.0) AS TotalAllowed,
-        ISNULL(BA.InsurancePayment, 0.0) AS CarrierPayment,
-        CAST(ROUND(CASE WHEN BA.TotalCharge > 0 THEN BA.InsurancePayment * 100.0 / BA.TotalCharge ELSE 0 END, 1) AS DECIMAL(8,2)) AS PaymentPercentage,
-        ISNULL(BA.InsuranceAdjustment, 0.0) AS CarrierWO,
-        ISNULL(BA.PatientPaidAmount, 0.0) AS PatientPaidAmount,
-        ISNULL(BA.PatientAdjustment, 0.0) AS PatientWO,
-        ISNULL(BA.InsuranceBalance, 0.0) AS CarrierBalance,
-        ISNULL(BA.PatientBalance, 0.0) AS PatientBalance,
-        ISNULL(BA.TotalBalance, 0.0) AS TotalBalance,
-		(ISNULL(BA.InsuranceAdjustment, 0.0) + ISNULL(BA.PatientAdjustment, 0.0)) TotalAdjustment,
-		CASE WHEN CPS.FinalStatus = 'Fully Paid' THEN (BA.InsurancePayment + BA.PatientPaidAmount) ELSE NULL END AS FullyPaid,
+		CPS.DenialDescription,
+        ISNULL(CPS.BilledAmount, 0.0) AS TotalCharge,
+        ISNULL(CPS.AllowedAmount, 0.0) AS TotalAllowed,
+        ISNULL(CPS.InsurancePayment, 0.0) AS CarrierPayment,
+        CAST(ROUND(CASE WHEN CPS.BilledAmount > 0 THEN CPS.InsurancePayment * 100.0 / CPS.BilledAmount ELSE 0 END, 1) AS DECIMAL(8,2)) AS PaymentPercentage,
+        ISNULL(CPS.InsuranceAdjustment, 0.0) AS CarrierWO,
+        ISNULL(CPS.PatientPaidAmount, 0.0) AS PatientPaidAmount,
+        ISNULL(CPS.PatientAdjustment, 0.0) AS PatientWO,
+        ISNULL(CPS.InsuranceBalance, 0.0) AS CarrierBalance,
+        ISNULL(CPS.PatientBalance, 0.0) AS PatientBalance,
+        ISNULL(CPS.TotalBalance, 0.0) AS TotalBalance,
+		(ISNULL(CPS.InsuranceAdjustment, 0.0) + ISNULL(CPS.PatientAdjustment, 0.0)) TotalAdjustment,
+		CASE WHEN CPS.FinalStatus = 'Fully Paid' THEN (CPS.InsurancePayment + CPS.PatientPaidAmount) ELSE NULL END AS FullyPaid,
         CASE WHEN CPS.FinalStatus = 'Fully Paid' THEN 'Fully Paid Count' ELSE NULL END AS FullyPaidCount,
         CASE WHEN DATEDIFF(DAY, md.SampleCollectionDate, md.FirstBillDate) <= 30 THEN '30 Days Count' ELSE NULL END AS T30DaysCount,
-        CASE WHEN DATEDIFF(DAY, md.SampleCollectionDate, md.FirstBillDate) <= 30 THEN (BA.InsurancePayment + BA.PatientPaidAmount) ELSE NULL END AS T30Amount,
+        CASE WHEN DATEDIFF(DAY, md.SampleCollectionDate, md.FirstBillDate) <= 30 THEN (CPS.InsurancePayment + CPS.PatientPaidAmount) ELSE NULL END AS T30Amount,
         CASE WHEN DATEDIFF(DAY, md.SampleCollectionDate, md.FirstBillDate) BETWEEN 31 AND 60 THEN '60 Days Count' ELSE NULL END AS T60DaysCount,
-        CASE WHEN DATEDIFF(DAY, md.SampleCollectionDate, md.FirstBillDate) BETWEEN 31 AND 60 THEN (BA.InsurancePayment + BA.PatientPaidAmount) ELSE NULL END AS T60Amount,
+        CASE WHEN DATEDIFF(DAY, md.SampleCollectionDate, md.FirstBillDate) BETWEEN 31 AND 60 THEN (CPS.InsurancePayment + CPS.PatientPaidAmount) ELSE NULL END AS T60Amount,
     -- Conditionally return AdjudicatedAmount
 		CASE 
 			WHEN CPS.FinalStatus IN ('No Response','Unbilled','Unbilled - Client','Unbilled - Patient Balance','No Response - Client') THEN NULL
 			WHEN CPS.FinalStatus = 'Fully Adjusted' AND CPS.DenailCode IS NULL THEN NULL
-			ELSE (BA.InsurancePayment)
+			ELSE (CPS.InsurancePayment)
 		END AS AdjudicatedAmount,
 
 		-- Conditionally return AdjudicatedCount
@@ -4273,19 +4637,53 @@ BEGIN
 		CASE WHEN md.AccessionNo is null then 'Missing LIS Data' else '' end LISMissingRecord,
 		Md.BillingLab
     FROM MainData md
-	----LEFT JOIN #ICDCode ICD ON md.VisitNumber = ICD.VisitNumber
-    ----LEFT JOIN #TransactionMaster TM ON md.VisitNumber = TM.VisitNo
-	LEFT JOIN #TransData TD ON md.VisitNumber = TD.VisitNumber
     LEFT JOIN MostFrequentFinancialClass FC ON md.VisitNumber = FC.VisitNumber AND FC.rn = 1
     LEFT JOIN MostFrequentPOS POS ON md.VisitNumber = POS.VisitNumber AND POS.rn = 1
     LEFT JOIN MostFrequentTOS TOS ON md.VisitNumber = TOS.VisitNumber AND TOS.rn = 1
-    LEFT JOIN BillingAgg BA ON md.VisitNumber = BA.VisitNumber
-    LEFT JOIN AggregatedCPT AG ON md.VisitNumber = AG.VisitNumber
     LEFT JOIN ClaimsLevelStatus CPS ON md.VisitNumber = CPS.VisitNumber
-    ----LEFT JOIN #DenialCode DC ON md.VisitNumber = DC.VisitNumber AND DC.DenialCode IS NOT NULL
     WHERE md.rn = 1 and LTRIM(RTRIM(md.BillingLab)) NOT IN ('DTR') order by FirstBillDate 
 
     DROP TABLE IF EXISTS #BillingMasterTemp, #TransactionMaster, #DenialCode;
+END
+GO
+/****** Object:  StoredProcedure [dbo].[sp_GETDenialClaimLevel]******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+create   Procedure [dbo].[sp_GETDenialClaimLevel]
+AS BEGIN 
+
+SELECT VisitNumber,PatientName,PatientDOB,PanelCarrier,PanelName,ReferringProvider,BeginDOS,
+ChargeEntryDate,FirstBillDate, ROW_NUMBER() OVER (PARTITION BY VisitNumber ORDER BY 
+CASE WHEN FirstBillDate IS NULL THEN 1 ELSE 0 END,FirstBillDate) AS rn INTO #BillingMaster FROM BillingMaster 
+
+
+Select BM.VisitNumber,CBD.AccessionNo,PatientName,PatientDOB,PanelCarrier,ReferringProvider,BeginDOS,ChargeEntryDate,CBD.FirstBillDate,
+CPTCodeWithUnits CPTCode,ICDCodes,DenailCode DenialCode,DenialDescription,DenialPostedDate,BilledAmount,AllowedAmount,InsurancePayment,
+PatientPaidAmount,InsuranceAdjustment,PatientAdjustment,InsuranceBalance,PatientBalance,TotalBalance
+From ClaimsLevelStatus CBD 
+JOIN #BillingMaster BM ON CBD.VisitNumber = BM.VisitNumber 
+WHERE rn = 1 and CBD.DenailCode IS NOT NULL
+
+END
+GO
+/****** Object:  StoredProcedure [dbo].[sp_GetDenialLineLevelReport]******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+create Procedure [dbo].[sp_GetDenialLineLevelReport]
+AS BEGIN
+
+Select VisitNumber,AccessionNo,PatientName,PatientDOB,PanelCarrier Carrier,PayerType,PanelName,BillingProvider,ReferringProvider,BeginDOS,ChargeEntryDate,
+FirstBillDate,CPTCode,Modifier,ICD10Code,Units,DenialPostedDate,DenialCode,DenialDescription,BilledAmount,AllowedAmount,InsurancePayment,InsuranceAdjustment,
+PatientPaidAmount,PatientAdjustment,InsuranceBalance,PatientBalance,TotalBalance
+from BillingMaster Where DenialCode IS NOT NULL
+
 END
 GO
 /****** Object:  StoredProcedure [dbo].[sp_GetLISMasterReportByDateRange]******/
@@ -4351,7 +4749,7 @@ BEGIN
 		BP.BillingProvider,
 		PerformingLab,
 		ResultedStatus,
-		IsBilled [Billed / Un-Billed],
+		IsBilled [BillingStatus],
         SS.SpecimenStatusName,
   --      OG.OperationsGroup,
 		--pg.PanelCategory PanelGroup,
@@ -4364,7 +4762,7 @@ BEGIN
 		CASE WHEN BillingSubStatus = 'Billed Via DTR AMD' THEN 'DTR'
 		WHEN BillingSubStatus IN ('Billed Via DTR & IH AMD','Billed Via IH AMD') THEN 'Billed'
 		ELSE 'UnBilled' END AS [Billed / UnBilled],
-        LIS.BillingStatus,
+        LIS.BillingStatus [NewStatus],
 		BillingSubStatus,
 		CONVERT(VARCHAR, LIS.FirstBilledDateIH, 101) [FirstBilledDate],
 		--CONVERT(VARCHAR, LIS.FirstBilledDateDTR, 101) [Billed Date-DTR AMD],
@@ -4402,22 +4800,11 @@ CREATE PROC [dbo].[sp_GetProductionLineLevelReport]
 AS
 BEGIN
 
-----DROP TABLE IF EXISTS #DenialCodeMaster;
-----SELECT 
-----    VisitNumber,CPTCodes,DBO.[GetDenailCodeByVisitCPT](VisitNumber,CPTCodes) AS PaymentReasonCodes,MAX(PaymentDate) AS MostRecentDenialPostingDate
-----	INTO #DenialCodeMaster
-----FROM DenialTrackingMaster
-----WHERE PaymentReasonCode IS NOT NULL
-----GROUP BY VisitNumber,CPTCodes ORDER BY VisitNumber
-
---CREATE NONCLUSTERED INDEX IX_VisitNumber ON #DenialCodeMaster (VisitNumber,CPTCodes);
-
     SELECT  
         ISNULL(UPPER(b.AccessionNo),'Missing LIS Info') AccessionNo,
         b.VisitNumber,
         b.CPTCode,
         b.PatientName,
-		--RT.RequisitionTypeName,
 		CAST(B.PatientDOB AS DATE) AS  PatientDOB, 
         PanelCarrier PayerName,
         PayerType,
@@ -4428,7 +4815,6 @@ BEGIN
 		CAST(FirstBillDate AS DATE) AS      FirstBillDate,
 		ISNULL(b.PanelCode, 'No Panel Located') AS PanelGroup,
 		ISNULL(b.LISPanel, 'No Panel Located') AS LISPanel,
-		--ISNULL(b.PanelName, 'No Panel Located') AS OrderInfo,
 		POS,
 		TOS,
         b.ICD10Code,
@@ -4440,6 +4826,7 @@ BEGIN
         b.Modifier,
         DenialCode as DenialCode,
 		OrginalDenialCode AS [Orginal Denial Code],
+		DenialDescription,
         b.BilledAmount,
         b.AllowedAmount,
         b.InsurancePayment,
@@ -4453,8 +4840,6 @@ BEGIN
 		l.BillingLab Facility,
 		cm.ClinicName,
 		l.SalesRepEmail SalesPersonName,
-		--og.OperationsGroup,
-		--tt.TestTypeName TestType,
 		ReferringProvider ReferringProviderName,
 		b.ClaimSubStatus BillingSubStatus,
 		CASE WHEN b.AccessionNo is null then 'Missing LIS Data' else '' end LISMissingRecord,
@@ -4462,11 +4847,6 @@ BEGIN
 
     FROM BillingMaster b
     LEFT JOIN LISMaster l ON b.AccessionNo = l.AccessionNo AND l.Entry_Status <> 'Incomplete'
-	--LEFT JOIN #DenialCodeMaster dt on b.VisitNumber = dt.VisitNumber AND b.CPTCode = dt.CPTCodes
-	--LEFT JOIN RequisitionTypes RT on l.RequistionTypeId = RT.RequisitionTypeId
-    --LEFT JOIN OperationsGroupMaster OG ON l.OperationalGroupId = OG.OperationGroupID 
-    --LEFT JOIN TestTypeMaster TT ON l.TestTypeId = TT.TestTypeId
-	--LEFT JOIN SalesPerson SP ON L.SalesPersonId = SP.SalesPersonID
 	LEFT JOIN ClinicMaster CM ON l.ClinicId = CM.ClinicId
 
     WHERE 
@@ -4488,18 +4868,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-	EXEC [SP_UpdatePanelDetail_Billing];
-
-			WITH CTE_TransDate AS(
-		SELECT VisitNumber,ROW_NUMBER() OVER (
-					PARTITION BY VisitNumber
-					ORDER BY CheckDate DESC, PaymentPostedDate DESC
-				) AS rn,
-				CheckDate,PaymentPostedDate,CheckNumber FROM BillingMaster where CheckDate is not null
-				) SELECT VisitNumber,CheckDate,PaymentPostedDate,CheckNumber INTO #TransData FROM CTE_TransDate Where rn = 1 ;
-
-				  CREATE NONCLUSTERED INDEX IX_VisitNumber_TR ON #TransData (VisitNumber);
-    -- Temp tables
+	
     SELECT * INTO #BillingMasterTemp 
     FROM BillingMaster WITH (NOLOCK)
     WHERE (@FromDate IS NULL OR FirstBillDate >= @FromDate) 
@@ -4509,32 +4878,8 @@ BEGIN
 
     CREATE NONCLUSTERED INDEX IX_VisitNumber_BM ON #BillingMasterTemp (VisitNumber);
 
-    --DROP TABLE IF EXISTS #DenialCode;
-    --SELECT DISTINCT VisitNumber, DBO.GetDenailCodeByVisitNumber(VisitNumber) AS DenialCode,MAX(PaymentDate) DenialDate
-    --INTO #DenialCode 
-    --FROM DenialTrackingMaster 
-    --WHERE PaymentReasonCode IS NOT NULL GROUP BY  VisitNumber, DBO.GetDenailCodeByVisitNumber(VisitNumber);
-
-
-    --CREATE NONCLUSTERED INDEX IX_VisitNumber_DC ON #DenialCode (VisitNumber);
-    --CREATE NONCLUSTERED INDEX IX_VisitNumber_ICD ON #ICDCode (VisitNumber);  
-
-    -- Aggregations
-    ;WITH BillingAgg AS (
-        SELECT VisitNumber,
-            SUM(BilledAmount) AS TotalCharge,
-            SUM(AllowedAmount) AS AllowedAmount,
-            SUM(InsurancePayment) AS InsurancePayment,
-            SUM(InsuranceAdjustment) AS InsuranceAdjustment,
-            SUM(PatientPaidAmount) AS PatientPaidAmount,
-            SUM(PatientAdjustment) AS PatientAdjustment,
-            SUM(InsuranceBalance) AS InsuranceBalance,
-            SUM(PatientBalance) AS PatientBalance,
-            SUM(TotalBalance) AS TotalBalance
-        FROM #BillingMasterTemp
-        GROUP BY VisitNumber
-    ),
-    MostFrequentFinancialClass AS (
+    
+    ;WITH MostFrequentFinancialClass AS (
         SELECT VisitNumber, PT.PayerType,
                ROW_NUMBER() OVER (PARTITION BY VisitNumber ORDER BY COUNT(*) DESC) AS rn
         FROM #BillingMasterTemp BM
@@ -4555,18 +4900,6 @@ BEGIN
         WHERE TOS IS NOT NULL
         GROUP BY VisitNumber, TOS
     ),
-    GroupedCPT AS (
-        SELECT bm.VisitNumber, bm.CPTCode, SUM(bm.Units) AS Units
-        FROM #BillingMasterTemp bm
-        GROUP BY bm.VisitNumber, bm.CPTCode
-    ),
-    AggregatedCPT AS (
-        SELECT VisitNumber,
-            STRING_AGG(CAST(CPTCode AS VARCHAR(20)) + 
-                (CASE WHEN ISNULL(Units,0) = 0 THEN '' ELSE '* ' + CAST(ISNULL(Units,0) AS VARCHAR(10)) END), ', ') AS CPTCode
-        FROM GroupedCPT
-        GROUP BY VisitNumber
-    ),
     MainData AS (
         SELECT 
         BM.VisitNumber,
@@ -4574,11 +4907,8 @@ BEGIN
         BM.PayerType,
         BM.BillingProvider,
 		BM.AccessionNo,
-        -- Window function instead of MIN()
         MIN(BM.BeginDOS) OVER (PARTITION BY BM.VisitNumber) AS BeginDOS,
 		MIN(BM.ChargeEntryDate) OVER (PARTITION BY BM.VisitNumber) AS ChargeEntryDate,
-		--MAX(BM.CheckDate) OVER (PARTITION BY BM.VisitNumber) AS CheckDate,
-		--MAX(BM.PaymentPostedDate) OVER (PARTITION BY BM.VisitNumber) AS PaymentPostedDate,
 		BM.PatientDOB,
 		BM.PatientName,
 		BM.ChartNumber,
@@ -4602,15 +4932,12 @@ BEGIN
         ON BM.AccessionNo = LIS.AccessionNo AND LIS.Entry_Status <> 'Incomplete'
     LEFT JOIN TestTypeMaster TT 
         ON LIS.TestTypeId = TT.TestTypeId
-   		--LEFT JOIN RequisitionTypes rt ON LIS.RequistionTypeId = rt.RequisitionTypeId
 		LEFT JOIN ClinicMaster CM ON LIS.ClinicId = CM.ClinicId
-		--LEFT JOIN SalesPerson SP ON LIS.SalesPersonId = SP.SalesPersonID
     )
     SELECT DISTINCT
         md.VisitNumber,
         ISNULL(md.AccessionNo,'Missing LIS Data') AS AccessionNo,
-        --ISNULL(md.PanelName,'No Panel Info') AS PanelName,
-		ISNULL(CPS.PanelCode,'No Panel Info') AS PanelGroup,
+		ISNULL(CPS.PanelCode,'No Panel Info') AS PanelName,
 		ISNULL(CPS.LISPanel,'No Panel Info') AS LISPanel,
 		OrderInfo OrderInfo,
         ISNULL(PayerName,'No Payer Info') AS Carrier,
@@ -4637,38 +4964,39 @@ BEGIN
 		CONVERT(VARCHAR, md.FirstBillDate, 101)  AS FirstBillDate,
 		CONVERT(VARCHAR, MD.ChargeEntryDate, 101)   AS ChargeEntryDate,
 		CONVERT(VARCHAR, CPS.DenialPostedDate, 101)	DenialPostedDate,
-		CONVERT(VARCHAR, TD.CheckDate, 101)	CheckDate,
-		CONVERT(VARCHAR, TD.PaymentPostedDate, 101)	PaymentPostedDate,
-		TD.CheckNumber,
+		CONVERT(VARCHAR, CPS.CheckDate, 101)	CheckDate,
+		CONVERT(VARCHAR, CPS.PaymentPostedDate, 101)	PaymentPostedDate,
+		CPS.CheckNumber,
         CASE WHEN md.FirstBillDate IS NOT NULL THEN 'Billed' ELSE 'Not Billed' END AS BilledNotBilled,
         POS.POS,
         TOS.TOS,
-        AG.CPTCode,
+        CPS.CPTCodeWithUnits CPTCode,
         CPS.ICDCodes AS PrimaryDiagnosis,
         CPS.DenailCode DenialCode,
 		CPS.OrginalDenailCode [Orignal Denial Code],
-        ISNULL(BA.TotalCharge, 0.0) AS TotalCharge,
-        ISNULL(BA.AllowedAmount, 0.0) AS TotalAllowed,
-        ISNULL(BA.InsurancePayment, 0.0) AS CarrierPayment,
-        CAST(ROUND(CASE WHEN BA.TotalCharge > 0 THEN BA.InsurancePayment * 100.0 / BA.TotalCharge ELSE 0 END, 1) AS DECIMAL(8,2)) AS PaymentPercentage,
-        ISNULL(BA.InsuranceAdjustment, 0.0) AS CarrierWO,
-        ISNULL(BA.PatientPaidAmount, 0.0) AS PatientPaidAmount,
-        ISNULL(BA.PatientAdjustment, 0.0) AS PatientWO,
-        ISNULL(BA.InsuranceBalance, 0.0) AS CarrierBalance,
-        ISNULL(BA.PatientBalance, 0.0) AS PatientBalance,
-        ISNULL(BA.TotalBalance, 0.0) AS TotalBalance,
-		(ISNULL(BA.InsuranceAdjustment, 0.0) + ISNULL(BA.PatientAdjustment, 0.0)) TotalAdjustment,
-		CASE WHEN CPS.FinalStatus = 'Fully Paid' THEN (BA.InsurancePayment + BA.PatientPaidAmount) ELSE NULL END AS FullyPaid,
+		CPS.DenialDescription,
+        ISNULL(CPS.BilledAmount, 0.0) AS TotalCharge,
+        ISNULL(CPS.AllowedAmount, 0.0) AS TotalAllowed,
+        ISNULL(CPS.InsurancePayment, 0.0) AS CarrierPayment,
+        CAST(ROUND(CASE WHEN CPS.BilledAmount > 0 THEN CPS.InsurancePayment * 100.0 / CPS.BilledAmount ELSE 0 END, 1) AS DECIMAL(8,2)) AS PaymentPercentage,
+        ISNULL(CPS.InsuranceAdjustment, 0.0) AS CarrierWO,
+        ISNULL(CPS.PatientPaidAmount, 0.0) AS PatientPaidAmount,
+        ISNULL(CPS.PatientAdjustment, 0.0) AS PatientWO,
+        ISNULL(CPS.InsuranceBalance, 0.0) AS CarrierBalance,
+        ISNULL(CPS.PatientBalance, 0.0) AS PatientBalance,
+        ISNULL(CPS.TotalBalance, 0.0) AS TotalBalance,
+		(ISNULL(CPS.InsuranceAdjustment, 0.0) + ISNULL(CPS.PatientAdjustment, 0.0)) TotalAdjustment,
+		CASE WHEN CPS.FinalStatus = 'Fully Paid' THEN (CPS.InsurancePayment + CPS.PatientPaidAmount) ELSE NULL END AS FullyPaid,
         CASE WHEN CPS.FinalStatus = 'Fully Paid' THEN 'Fully Paid Count' ELSE NULL END AS FullyPaidCount,
         CASE WHEN DATEDIFF(DAY, md.SampleCollectionDate, md.FirstBillDate) <= 30 THEN '30 Days Count' ELSE NULL END AS T30DaysCount,
-        CASE WHEN DATEDIFF(DAY, md.SampleCollectionDate, md.FirstBillDate) <= 30 THEN (BA.InsurancePayment + BA.PatientPaidAmount) ELSE NULL END AS T30Amount,
+        CASE WHEN DATEDIFF(DAY, md.SampleCollectionDate, md.FirstBillDate) <= 30 THEN (CPS.InsurancePayment + CPS.PatientPaidAmount) ELSE NULL END AS T30Amount,
         CASE WHEN DATEDIFF(DAY, md.SampleCollectionDate, md.FirstBillDate) BETWEEN 31 AND 60 THEN '60 Days Count' ELSE NULL END AS T60DaysCount,
-        CASE WHEN DATEDIFF(DAY, md.SampleCollectionDate, md.FirstBillDate) BETWEEN 31 AND 60 THEN (BA.InsurancePayment + BA.PatientPaidAmount) ELSE NULL END AS T60Amount,
+        CASE WHEN DATEDIFF(DAY, md.SampleCollectionDate, md.FirstBillDate) BETWEEN 31 AND 60 THEN (CPS.InsurancePayment + CPS.PatientPaidAmount) ELSE NULL END AS T60Amount,
     -- Conditionally return AdjudicatedAmount
 		CASE 
 			WHEN CPS.FinalStatus IN ('No Response','Unbilled','Unbilled - Client','Unbilled - Patient Balance','No Response - Client') THEN NULL
 			WHEN CPS.FinalStatus = 'Fully Adjusted' AND CPS.DenailCode IS NULL THEN NULL
-			ELSE (BA.InsurancePayment)
+			ELSE (CPS.InsurancePayment)
 		END AS AdjudicatedAmount,
 
 		-- Conditionally return AdjudicatedCount
@@ -4682,16 +5010,10 @@ BEGIN
 		CASE WHEN md.AccessionNo is null then 'Missing LIS Data' else '' end LISMissingRecord,
 		Md.BillingLab
     FROM MainData md
-	----LEFT JOIN #ICDCode ICD ON md.VisitNumber = ICD.VisitNumber
-    ----LEFT JOIN #TransactionMaster TM ON md.VisitNumber = TM.VisitNo
-	LEFT JOIN #TransData TD ON md.VisitNumber = TD.VisitNumber
     LEFT JOIN MostFrequentFinancialClass FC ON md.VisitNumber = FC.VisitNumber AND FC.rn = 1
     LEFT JOIN MostFrequentPOS POS ON md.VisitNumber = POS.VisitNumber AND POS.rn = 1
     LEFT JOIN MostFrequentTOS TOS ON md.VisitNumber = TOS.VisitNumber AND TOS.rn = 1
-    LEFT JOIN BillingAgg BA ON md.VisitNumber = BA.VisitNumber
-    LEFT JOIN AggregatedCPT AG ON md.VisitNumber = AG.VisitNumber
     LEFT JOIN ClaimsLevelStatus CPS ON md.VisitNumber = CPS.VisitNumber
-    ----LEFT JOIN #DenialCode DC ON md.VisitNumber = DC.VisitNumber AND DC.DenialCode IS NOT NULL
     WHERE md.rn = 1 and LTRIM(RTRIM(md.BillingLab)) NOT IN ('DTR') order by FirstBillDate 
 
     DROP TABLE IF EXISTS #BillingMasterTemp, #TransactionMaster, #DenialCode;
@@ -5419,26 +5741,32 @@ AS BEGIN
 		UPDATE BM SET BM.AccessionNo = BA.AccessionNo From BillingMaster BM 
 		Join BillingAccessions BA ON Bm.VisitNumber = BA.VisitNumber
 
-		;WITH BA_Oldest AS
-		(
-			SELECT
-				BA.*,
-				ROW_NUMBER() OVER (
-					PARTITION BY BA.AccessionNo
-					ORDER BY BA.LastBillDate ASC     -- oldest bill date first
-				) AS rn
-			FROM BillingAccessions BA 
-			--Where BA.LastBillDate IS NOT NULL
-		)
-		UPDATE LIS
-		SET
-			LIS.VisitNumberIH      = BA.VisitNumber,
-			LIS.FirstBilledDateIH  = BA.LastBillDate,
-			LIS.ChargeEntryDateIH  = BA.DOE
-		FROM LISMaster LIS
-		JOIN BA_Oldest BA
-			ON LIS.AccessionNo = BA.AccessionNo
-		   AND BA.rn = 1;   
+		;WITH BA_Chosen AS
+			(
+				SELECT
+					BA.*,
+					ROW_NUMBER() OVER (
+						PARTITION BY BA.AccessionNo
+						ORDER BY
+							CASE 
+								WHEN BA.LastBillDate IS NULL THEN 1 
+								ELSE 0 
+							END,             -- 0 = has date, 1 = no date → rows WITH dates first
+							BA.LastBillDate, -- among dated rows, earliest date first
+							BA.DOE           -- tie-breaker when all dates are NULL
+					) AS rn
+				FROM BillingAccessions BA
+			)
+			UPDATE LIS
+			SET
+				LIS.VisitNumberIH     = BA.VisitNumber,
+				LIS.FirstBilledDateIH = BA.LastBillDate,
+				LIS.ChargeEntryDateIH = BA.DOE
+			FROM LISMaster LIS
+			JOIN BA_Chosen BA
+				ON LIS.AccessionNo = BA.AccessionNo
+			   AND BA.rn = 1;
+
 
    END
 GO
@@ -5494,13 +5822,17 @@ BEGIN
 
 	Declare @LabName NVARCHAR(50);
 
+	IF @FileId IS NULL
+		SET @FileId = (SELECT TOP 1 ImportedFileID FROM DenialTrackingStaging ORDER BY ImportedFileID DESC)
+
+        -- Drop temp table if exists
+        DROP TABLE IF EXISTS #DenialTrackingDetail;
+
+		
 	IF (Select FileType from ImportedFiles Where ImportedFileID = @FileId) = 206
 		SET @LabName = 'In Health'
 	ELSE IF (Select FileType from ImportedFiles Where ImportedFileID = @FileId) = 207
 		SET @LabName = 'DTR'
-
-        -- Drop temp table if exists
-        DROP TABLE IF EXISTS #DenialTrackingDetail;
 
         -- Load unique records into a temp table
         SELECT DISTINCT  
@@ -5521,13 +5853,14 @@ BEGIN
             DTM.NextActionDate,
             DTM.Note,
             DTM.DenialCategoryCode,
-            DTM.DenialCategoryDescription
+            DTM.DenialCategoryDescription,
+			DTM.PaymentReasonDescription
         INTO #DenialTrackingDetail
         FROM DenialTrackingStaging DTM WHERE (ImportedFileID = @FileId OR @FileId IS NULL);
 
         
         
-		DELETE FROM  DenialTrackingMaster WHERE BillingLab = @LabName;
+		DELETE FROM DenialTrackingMaster WHERE BillingLab = @LabName;
        
             INSERT into DenialTrackingMaster (
                 [VisitNumber],
@@ -5548,37 +5881,33 @@ BEGIN
                 [Note],
                 [DenialCategoryCode],
                 [DenialCategoryDEscription],
-				BillingLab
+				DenialDescription,BillingLab
             )
          SELECT dt.VisitNumber,CPTCode,TransactionCarrierCode,PaymentDate,PaymentReasonCode,ServiceDate,dt.Charge,TotalBalance,
-		 TotalAdjustment,ReasonAmount,DenialUser,LastAction,LastActionDate,NextAction,NextActionDate,dt.Note,DenialCategoryCode,DenialCategoryDescription,@LabName
-		 From #DenialTrackingDetail dt
+		 TotalAdjustment,ReasonAmount,DenialUser,LastAction,LastActionDate,NextAction,NextActionDate,Note,DenialCategoryCode,
+		 DenialCategoryDescription,PaymentReasonDescription,@LabName
+		 From #DenialTrackingDetail dt left join LISMaster lis on dt.VisitNumber = lis.VisitNumberIH
 
+
+		 SELECT VisitNumber,CPTCodes,DBO.GetDenailCodeByVisitCPT(VisitNumber,CPTCodes) DenialCode,
+		 DBO.GetOriginalDenailCodeByVisitCPT(VisitNumber,CPTCodes) OriginlDenialCode,MAX(PaymentDate) PaymentDate,
+		 DBO.[GetDenialCodeDescByVisitCPT](VisitNumber,CPTCodes) DenialDescription INTO #DenialDescription FROM DenialTrackingMaster
+		 GROUP BY VisitNumber,CPTCodes,DBO.GetDenailCodeByVisitCPT(VisitNumber,CPTCodes),
+		 DBO.GetOriginalDenailCodeByVisitCPT(VisitNumber,CPTCodes),
+		 DBO.[GetDenialCodeDescByVisitCPT](VisitNumber,CPTCodes);
+
+		 UPDATE BM SET BM.DenialCode = DXC.DenialCode, BM.OriginalDenailCode = DXC.OriginlDenialCode, 
+		 BM.DenialDescription =  REPLACE(REPLACE(DXC.DenialDescription,';',' , '),':',' -')  ,
+		 DenialPostedDate = CASE WHEN DXC.DenialCode IS NOT NULL THEN PaymentDate ELSE NULL END
+		 FROM BillingMaster BM
+		 JOIN #DenialDescription DXC ON BM.VisitNumber = DXC.VisitNumber AND BM.CPTCode = DXC.CPTCodes
 
 		 EXEC sp_InsertClaimDenialCode;
 		 EXEC sp_ClaimLevelStatusUpdate;
-
-
-		 UPDATE BillingMaster SET OrginalDenialCode = NULL, DenialCode = NULL ,DenialPostedDate = NULL 
-		 WHERE VisitNumber IN ( SELECT VisitNumber FROM DenialTrackingMaster WHERE BillingLab = @LabName);
-
-		 DROP TABLE IF EXISTS #DenialCodeMaster;
-		SELECT 
-			VisitNumber,CPTCodes,DBO.[GetDenailCodeByVisitCPT](VisitNumber,CPTCodes) AS PaymentReasonCodes,MAX(PaymentDate) AS MostRecentDenialPostingDate,
-			DBO.GetOriginalDenailCodeByVisitCPT(VisitNumber,CPTCodes) AS OriginalDenialCode
-			INTO #DenialCodeMaster
-		FROM DenialTrackingMaster
-		WHERE PaymentReasonCode IS NOT NULL
-		GROUP BY VisitNumber,CPTCodes ORDER BY VisitNumber
-
-		UPDATE BM SET BM.OrginalDenialCode = DC.OriginalDenialCode, BM.DenialCode = DC.PaymentReasonCodes ,BM.DenialPostedDate = DC.MostRecentDenialPostingDate FROM BillingMaster BM
-		JOIN #DenialCodeMaster DC on Bm.VisitNumber = DC.VisitNumber AND BM.CPTCode = DC.CPTCodes
- 
-
+		 EXEC sp_DenailDescrpUpdateByVisitCPT;
 
 		update ImportedFiles set FileStatus = 1,ProcessedOn = GETDATE()  where ImportedFileID = @FileId;
     END TRY
-
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
         SELECT 
@@ -5606,59 +5935,6 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        /*******************************************************************************************
-         Step 1: Update LISMaster with enriched patient/billing data
-        ********************************************************************************************/
-  ----      ;WITH CTE_BillingIH AS (
-  ----          SELECT
-  ----              VisitNumber,
-  ----              FirstBillDate,
-  ----              ChargeEntryDate,
-  ----              AccessionNo,
-  ----              ROW_NUMBER() OVER (
-  ----                  PARTITION BY VisitNumber, PayerTypeId, PrimaryPayerID, FirstBillDate, ChargeEntryDate
-  ----                  ORDER BY FirstBillDate
-  ----              ) AS RowNum
-  ----          FROM BillingMaster
-  ----          WHERE LTRIM(RTRIM(BillingLab)) = 'In Health'  AND  FirstBillDate IS NOT NULL
-  ----      )
-  ----      UPDATE LIS
-  ----      SET
-  ----          VisitNumberIH     = SCD.VisitNumber,
-  ----          FirstBilledDateIH = SCD.FirstBillDate,
-  ----          ChargeEntryDateIH = SCD.ChargeEntryDate,
-		----	BilledInHealthAMD = SCD.VisitNumber
-        
-		----FROM [dbo].[LISMaster] LIS
-  ----      JOIN CTE_BillingIH SCD
-  ----        ON LTRIM(RTRIM(LIS.AccessionNo)) = LTRIM(RTRIM(SCD.AccessionNo));
-
-  ----      ;WITH CTE_BillingDTR AS (
-  ----          SELECT
-  ----              VisitNumber,
-  ----              FirstBillDate,
-  ----              ChargeEntryDate,
-  ----              AccessionNo,
-  ----              ROW_NUMBER() OVER (
-  ----                  PARTITION BY VisitNumber, PayerTypeId, PrimaryPayerID, FirstBillDate, ChargeEntryDate
-  ----                  ORDER BY FirstBillDate 
-  ----              ) AS RowNum
-  ----          FROM BillingMaster 
-  ----          WHERE LTRIM(RTRIM(BillingLab)) = 'DTR' AND  FirstBillDate IS NOT NULL
-  ----      )
-  ----      UPDATE LIS
-  ----      SET
-  ----          VisitNumberDTR     = SCD.VisitNumber,
-  ----          FirstBilledDateDTR = SCD.FirstBillDate,
-  ----          ChargeEntryDateDTR = SCD.ChargeEntryDate,
-		----	BilledDTRAMD = SCD.VisitNumber
-  ----      FROM [dbo].[LISMaster] LIS
-  ----      JOIN CTE_BillingDTR SCD
-  ----        ON LTRIM(RTRIM(LIS.AccessionNo)) = LTRIM(RTRIM(SCD.AccessionNo));
-
-        /*******************************************************************************************
-         Step 4b: Derive ResultedStatus, BillingStatus, SubStatus, etc.
-        ********************************************************************************************/
         UPDATE [dbo].[LISMaster]
         SET 
             ResultedStatus = CASE 
@@ -5690,13 +5966,31 @@ BEGIN
         --    overwrite to 'Duplicate'. (Logic unchanged)
         -------------------------------------------------------------------------------
      
+		;WITH cte AS
+		(
+			SELECT  s.*,
+					rn = ROW_NUMBER() OVER
+						 (
+							 PARTITION BY AccessionNo      -- put your grouping columns here
+							 ORDER BY CASE 
+										 WHEN Entry_Status = 'Complete'   THEN 1  -- keep this as main
+										 WHEN Entry_Status = 'Incomplete' THEN 2  -- treat this as duplicate
+										 ELSE 3
+									  END
+						 )
+			FROM    LISMaster s WHERE LTRIM(RTRIM(Entry_Status)) <> 'Sent to Billing'
+		)
+		UPDATE cte
+		SET    BillingStatus = CASE WHEN rn > 1 THEN 'Duplicate' ELSE 'Other Samples' END;
+
 		-- Only flip rows that are currently "Other Samples"
 		;WITH DuplicatedAccessions AS
 		(
 			SELECT 
 				AccessionNo = LTRIM(RTRIM(AccessionNo))
 			FROM dbo.LISMaster
-			WHERE LTRIM(RTRIM(BillingStatus)) IN ('Other Samples', 'Billable')
+			WHERE LTRIM(RTRIM(BillingStatus)) IN ('Other Samples', 'Billable') 
+			AND AccessionNo NOT IN (Select DISTINCT AccessionNo FROM LISMaster WHERE BillingStatus = 'Duplicate')
 			GROUP BY LTRIM(RTRIM(AccessionNo))
 			HAVING COUNT(*) > 1
 		)
@@ -5720,7 +6014,23 @@ BEGIN
               ) AND BillingStatus IN ('Other Samples','Billable');
 
 		UPDATE LISMaster SET BillingStatus = 'Self-Pay' WHERE LTRIM(RTRIM(UPPER(PrimaryInsurancePayer))) IN ('SEL','SE')
-		AND LTRIM(RTRIM(UPPER(Insurance))) IN ('SELF PAY')
+		AND LTRIM(RTRIM(UPPER(Insurance))) IN ('SELF PAY') AND Entry_Status NOT IN ('Incomplete')
+
+		;WITH cte AS
+		(
+			SELECT  s.*,
+					rn = ROW_NUMBER() OVER
+						 (
+							 PARTITION BY AccessionNo      -- put your grouping columns here
+							 ORDER BY PrimaryInsurancePayer,Insurance DESC
+						 )
+			FROM    LISMaster s WHERE  
+			LTRIM(RTRIM(UPPER(PrimaryInsurancePayer))) IN ('SELF','SELF PAY','PRIVATE PAY','PAY','SELF PA') 
+			OR LTRIM(RTRIM(UPPER(Insurance))) IN ('SELF PAY')
+		)
+		UPDATE cte
+		SET    BillingStatus = CASE WHEN rn > 1 THEN 'Duplicate' ELSE 'SELF PAY' END;
+
         -------------------------------------------------------------------------------
         -- Billing Sub Status (logic unchanged; only added LTRIM/RTRIM on text checks)
         -------------------------------------------------------------------------------
@@ -6042,33 +6352,9 @@ BEGIN
 		FROM #AggregatedTemp AT
 		
 
-	select VisitNo,CPTCode,SUM(Units) Units INTO #TransData from TransactionMaster 
-	where TransactionType = 'Charge' and TotalBilledAmount > 0 and void is null  
-	GROUP BY  VisitNo,CPTCode;
 
-	UPDATE BM SET BM.Units = TD.Units FROM BillingMaster BM 
-	JOIN #TransData TD ON BM.VisitNumber = TD.VisitNo and BM.CPTCode = TD.CPTCode
 
-		TRUNCATE TABLE [TransactionSummary];
-
-		INSERT INTO [dbo].[TransactionSummary]
-           ([VisitNumber]
-           ,[CPTCode]
-           ,[CheckNumber]
-           ,[DateOfDeposit]
-           ,[DateOfEntry]
-           ,[TransactionType]
-           ,[Units]
-           ,[TotalBilledAmount]
-           ,[AdjustmentAmount]
-           ,[PatientPaidAmount]
-           ,[TotalPaidAmount]
-           ,[InsurancePaidAmount])
-		SELECT VisitNo,CPTCode,CheckNumber,DateofDeposit,DateofEntry,TransactionType,Units,sum(TotalBilledAmount) TotalBilledAmount,Sum(AdjustmentAmount) AdjustmentAmount ,
-		sum(PatientPaidAmount) PatientPaidAmount,sum(TotalPaidAmount) TotalPaidAmount,Sum(InsurancePaidAmount) InsurancePaidAmount FROM TransactionMaster 
-		Group By VisitNo,CPTCode,CheckNumber,DateofDeposit,DateofEntry,TransactionType,Units;
-
-		--EXEC [BillingMasterProcess_Proc];
+		--EXEC sp_ClaimLevelStatusUpdate;
 
 		update ImportedFiles set FileStatus = 1,ProcessedOn = GETDATE()  where ImportedFileID = @FileId;
 
@@ -6211,7 +6497,7 @@ BEGIN
     SET NOCOUNT ON;
 
     ---------------------------------------------------------------------------
-    -- 1) Target list: ONLY the �new indexes� we created in your previous script
+    -- 1) Target list: ONLY the “new indexes” we created in your previous script
     --    (schema, table, index). If you add more later, append them here.
     ---------------------------------------------------------------------------
     DECLARE @Targets TABLE
@@ -6376,59 +6662,124 @@ BEGIN
         PRINT 'Completed sp_RebuildNewIndexes.';
 END
 GO
+/****** Object:  StoredProcedure [dbo].[sp_UpdateDenialMasterTable]******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- Procedure to populate/update DenialMasterTable
+create     PROCEDURE [dbo].[sp_UpdateDenialMasterTable]
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    -- Temporary table to hold parsed denial data with explicit collation
+    CREATE TABLE #TempDenials (
+        DenialCode VARCHAR(50) COLLATE SQL_Latin1_General_CP1_CI_AS,
+        DenialDescription NVARCHAR(1000) COLLATE SQL_Latin1_General_CP1_CI_AS
+    )
+    
+    -- Parse the data from DenialTrackingStaging
+    ;WITH SplitDenials AS (
+        SELECT 
+            -- Split PaymentReasonCode by ';'
+            Code.Item AS ParsedCode,
+            -- Split PaymentReasonDescription by ';'
+            [Desc].Item AS ParsedDescription,
+            Code.ItemIndex
+        FROM DenialTrackingStaging DTS
+        CROSS APPLY dbo.SplitString(DTS.PaymentReasonCode, ';') Code
+        CROSS APPLY dbo.SplitString(DTS.PaymentReasonDescription, ';') [Desc]
+        WHERE Code.ItemIndex = [Desc].ItemIndex
+            AND DTS.PaymentReasonCode IS NOT NULL
+            AND DTS.PaymentReasonDescription IS NOT NULL
+    ),
+    CleanedDenials AS (
+        SELECT 
+            LTRIM(RTRIM(ParsedCode)) COLLATE SQL_Latin1_General_CP1_CI_AS AS DenialCode,
+            -- Clean the description: remove the code prefix (e.g., "CO131: ")
+            CASE 
+                WHEN CHARINDEX(':', ParsedDescription) > 0 
+                THEN LTRIM(RTRIM(SUBSTRING(ParsedDescription, CHARINDEX(':', ParsedDescription) + 1, LEN(ParsedDescription))))
+                ELSE LTRIM(RTRIM(ParsedDescription))
+            END COLLATE SQL_Latin1_General_CP1_CI_AS AS DenialDescription
+        FROM SplitDenials
+        WHERE LTRIM(RTRIM(ParsedCode)) <> ''
+    )
+    INSERT INTO #TempDenials (DenialCode, DenialDescription)
+    SELECT DISTINCT 
+        DenialCode,
+        MAX(DenialDescription) AS DenialDescription -- Use MAX to get one description if multiple exist
+    FROM CleanedDenials
+    GROUP BY DenialCode
+    
+    -- Debug: Check what we parsed
+    --SELECT * FROM #TempDenials ORDER BY DenialCode
+    
+    -- Insert new denial codes
+    INSERT INTO DenialMasterTable (DenialCode, DenialDescription)
+    SELECT 
+        TD.DenialCode,
+        TD.DenialDescription
+    FROM #TempDenials TD
+    LEFT JOIN DenialMasterTable DMT ON TD.DenialCode = DMT.DenialCode COLLATE SQL_Latin1_General_CP1_CI_AS
+    WHERE DMT.DenialMasterID IS NULL -- Not exists
+    
+    PRINT 'Inserted ' + CAST(@@ROWCOUNT AS VARCHAR(10)) + ' new denial codes.'
+    
+    ---- Update existing denial codes with collation fix in WHERE clause
+    --UPDATE DMT
+    --SET 
+    --    DMT.DenialDescription = TD.DenialDescription,
+    --    DMT.ModifiedDate = GETDATE()
+    --FROM DenialMasterTable DMT
+    --INNER JOIN #TempDenials TD ON DMT.DenialCode COLLATE SQL_Latin1_General_CP1_CI_AS = TD.DenialCode
+    --WHERE ISNULL(DMT.DenialDescription COLLATE SQL_Latin1_General_CP1_CI_AS, '') 
+    --      <> ISNULL(TD.DenialDescription, '')
+    
+    --PRINT 'Updated ' + CAST(@@ROWCOUNT AS VARCHAR(10)) + ' existing denial codes.'
+    
+    -- Clean up
+    DROP TABLE #TempDenials
+    
+    -- Show final result
+ --   SELECT * FROM DenialMasterTable ORDER BY DenialCode
+END
+GO
 /****** Object:  StoredProcedure [dbo].[SP_UpdatePanelDetail_Billing]******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE   PROCEDURE [dbo].[SP_UpdatePanelDetail_Billing]
+CREATE    PROCEDURE [dbo].[SP_UpdatePanelDetail_Billing]
 AS
 BEGIN
     SET NOCOUNT ON;
 	
-    /*========================================================
-      4) CPT-driven PanelCode in a single pass (with change check)
-         (Your comment mentioned PanelName; original code set PanelCode.
-          This keeps PanelCode for compatibility�switch if needed.)
-    ========================================================*/
-    --UPDATE BM
-    --   SET BM.PanelCode =
-    --       CASE
-    --           WHEN BM.CPTCode IN ('80307','G0480','G0481','G0482','G0483') THEN 'Toxicology'
-    --           WHEN BM.CPTCode LIKE '87%'                                   THEN 'Infectious Disease'
-    --           ELSE BM.PanelCode
-    --       END
-    --FROM dbo.BillingMaster AS BM
-    --WHERE (BM.CPTCode IN ('80307','G0480','G0481','G0482','G0483') AND BM.PanelCode <> 'Toxicology')
-    --   OR (BM.CPTCode LIKE '87%' AND BM.PanelCode <> 'Infectious Disease');
+	UPDATE ClaimsLevelStatus SET PanelCode = CASE 
+    WHEN CPTCodes IN ('80307,G0480', '80307,G0481', '80307', 'G0480','G0481','80307, G0482','G0482') THEN 'Toxicology'
+    WHEN CPTCodes IN ('87486,87541,87563,87631,87640,87798') THEN 'Wound Panel'
+	WHEN CPTCodes IN ('87481,87563,87640,87651,87798', '87481,87640,87651,87653,87798', 
+	'87481,87500,87640,87641,87651,87653,87798') THEN 'UTI Panel'
+    ELSE NULL END;
 
-	UPDATE BillingMaster SET PanelCode = CASE 
-    WHEN CPTCode IN ('80307', 'G0480', 'G0481', 'G0482') THEN 'Toxicology'
-    WHEN CPTCode IN (
-        '87486', '87541', '87563', '87631', '87640', '87798',
-        '87481', '87651', '87653', '87500', '87641'
-    ) THEN 'UTI Panel'
-    ELSE PanelCode
-END;
+	UPDATE CLS SET CLS.PanelCode = LIS.PanelCode FROM ClaimsLevelStatus CLS
+	JOIN LISMaster LIS ON CLS.VisitNumber = LIS.VisitNumberIH WHERE CLS.PanelCode IS NULL
 
+
+	UPDATE CLS SET CLS.LISPanel = LIS.PanelCode FROM ClaimsLevelStatus CLS
+	JOIN LISMaster LIS ON CLS.VisitNumber = LIS.VisitNumberIH
+
+	UPDATE BM SET BM.PanelCode = CLS.PanelCode FROM BillingMaster BM
+	JOIN ClaimsLevelStatus CLS ON Bm.VisitNumber = CLS.VisitNumber 
+
+	Update ClaimsLevelStatus SET PanelCode = 'Unable to Locate' WHERE PanelCode IS NULL;
+
+	Update BillingMaster SET PanelCode = 'Unable to Locate' WHERE PanelCode IS NULL;
 
     /*========================================================
       1) Direct AccessionNo match: cheap and highly selective
     ========================================================*/
-    --;WITH LIS_norm AS
-    --(
-    --    SELECT L.AccessionNo, L.OrderInfo, L.PanelCode
-    --    FROM dbo.LISMaster AS L
-    --)
-    --UPDATE BM
-    --   SET BM.PanelName = L.OrderInfo,
-    --       BM.LISPanel = ISNULL(L.PanelCode,'Unable to Locate')
-    --FROM dbo.BillingMaster AS BM
-    --JOIN LIS_norm AS L
-    --    ON L.AccessionNo = BM.AccessionNo
-    ----WHERE (BM.PanelName IS NULL OR BM.PanelName <> L.OrderInfo
-    ----    OR BM.PanelCode IS NULL OR BM.PanelCode <> L.PanelCode);
-
    
     UPDATE BM
        SET BM.PanelName = CD.OrderInfo,
@@ -6438,12 +6789,5 @@ END;
         ON BM.VisitNumber = CD.VisitNumberIH
     --WHERE BM.PanelCode IS NULL
 
-    /*========================================================
-      5) Backfill nulls (unmatched after all rules)
-    --========================================================*/
-    --UPDATE dbo.BillingMaster
-    --   SET LISPanel = 'Unable to Locate'
-    -- WHERE PanelCode IS NULL;
 END
 GO
-

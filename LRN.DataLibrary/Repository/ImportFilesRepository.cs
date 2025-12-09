@@ -83,10 +83,12 @@ public class ImportFilesRepository : IImportFilesRepository
         [(int)CommonConst.ImportFileType.Cove_Transaction_Detail_Report] = "Sp_ProcessTransactionDetails",
         [(int)CommonConst.ImportFileType.Cove_Denial_Tracking_Report] = "Sp_ProcessDenialTrackingMaster",
         [(int)CommonConst.ImportFileType.Cove_Accession_Payment_Report] = "Sp_ProcessAccessionPaymentReport",
-        #endregion
+		[(int)CommonConst.ImportFileType.Commit_Denial_Report] = "sp_ProcessCommitDenialStaging",
+		[(int)CommonConst.ImportFileType.Commit_Transaction_Report] = "sp_ProcessCommitTransactionReport",
+		#endregion
 
-        #region InHealth_DTR FILES
-        [(int)CommonConst.ImportFileType.InHealthDTR_LIS_Master] = "SP_Process_LISMaster_ByFileId",
+		#region InHealth_DTR FILES
+		[(int)CommonConst.ImportFileType.InHealthDTR_LIS_Master] = "SP_Process_LISMaster_ByFileId",
         [(int)CommonConst.ImportFileType.InHealth_CCW] = "Sp_ProcessBillingMasterData",
         [(int)CommonConst.ImportFileType.DTR_CCW] = "Sp_ProcessBillingMasterData",
         [(int)CommonConst.ImportFileType.VISIT_AGAINST_ACCESSION_IHDTR] = "Sp_Process_VAA_ByFileId",
