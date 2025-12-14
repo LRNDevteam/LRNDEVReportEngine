@@ -17,341 +17,352 @@ namespace LRN.DataLibrary.Repository;
 
 public class ImportFilesRepository : IImportFilesRepository
 {
-    private readonly DapperContext _context;
+	private readonly DapperContext _context;
 
-    public ImportFilesRepository(DapperContext context)
-    {
-        _context = context;
-    }
+	public ImportFilesRepository(DapperContext context)
+	{
+		_context = context;
+	}
 
-    public async Task<List<ImportFileDto>> InsertImportFilesDataAsync(List<ImportFileDto> files)
-    {
-        if (files == null || files.Count == 0)
-            return new List<ImportFileDto>();
+	public async Task<List<ImportFileDto>> InsertImportFilesDataAsync(List<ImportFileDto> files)
+	{
+		if (files == null || files.Count == 0)
+			return new List<ImportFileDto>();
 
-        const string sql = @"INSERT INTO ImportedFiles (ImportFileName, ExcelRowCount, ImportedRowCount, FileStatus, ImportedOn, FileType, ProcessedOn, LabId,ImportFilePath)
+		const string sql = @"INSERT INTO ImportedFiles (ImportFileName, ExcelRowCount, ImportedRowCount, FileStatus, ImportedOn, FileType, ProcessedOn, LabId,ImportFilePath)
                              VALUES (@ImportFileName, @ExcelRowCount, @ImportedRowCount, @FileStatus, @ImportedOn, @FileType, @ProcessedOn, @LabId,@ImportFilePath);
                              SELECT CAST(SCOPE_IDENTITY() as int);";
-        using var connection = _context.CreateConnection();
-        foreach (var file in files)
-        {
-            var id = await connection.ExecuteScalarAsync<int>(sql, file);
-            file.ImportedFileId = id;
-        }
-        return files;
-    }
+		using var connection = _context.CreateConnection();
+		foreach (var file in files)
+		{
+			var id = await connection.ExecuteScalarAsync<int>(sql, file);
+			file.ImportedFileId = id;
+		}
+		return files;
+	}
 
-    public async Task<ImportFileDto> AddImportFileAync(ImportFileDto file)
-    {
-        var list = await InsertImportFilesDataAsync(new List<ImportFileDto> { file });
-        return list.First();
-    }
+	public async Task<ImportFileDto> AddImportFileAync(ImportFileDto file)
+	{
+		var list = await InsertImportFilesDataAsync(new List<ImportFileDto> { file });
+		return list.First();
+	}
 
-    public async Task UpdateImportFilesAsync(List<ImportFileDto> files)
-    {
-        const string sql = @"UPDATE ImportedFiles SET  ExcelRowCount=@ExcelRowCount, ImportedRowCount=@ImportedRowCount, FileStatus=@FileStatus,  ProcessedOn=GETDATE()  WHERE ImportedFileID = @ImportedFileId";
-        using var connection = _context.CreateConnection();
-        await connection.ExecuteAsync(sql, files);
-    }
+	public async Task UpdateImportFilesAsync(List<ImportFileDto> files)
+	{
+		const string sql = @"UPDATE ImportedFiles SET  ExcelRowCount=@ExcelRowCount, ImportedRowCount=@ImportedRowCount, FileStatus=@FileStatus,  ProcessedOn=GETDATE()  WHERE ImportedFileID = @ImportedFileId";
+		using var connection = _context.CreateConnection();
+		await connection.ExecuteAsync(sql, files);
+	}
 
-    public async Task UpdateFileAsync(ImportFileDto file)
-    {
-        await UpdateImportFilesAsync(new List<ImportFileDto> { file });
-    }
+	public async Task UpdateFileAsync(ImportFileDto file)
+	{
+		await UpdateImportFilesAsync(new List<ImportFileDto> { file });
+	}
 
-    //// map file type -> staging table
-    //private static readonly IReadOnlyDictionary<int, string> StagingByType = new Dictionary<int, string>
-    //{
-    //    [(int)CommonConst.ImportFileType.LIS_Report] = "dbo.LISStaging",
-    //    [(int)CommonConst.ImportFileType.Custom_Collection] = "dbo.CustomCollectionStaging",
-    //    [(int)CommonConst.ImportFileType.Visit_Against_Accession] = "dbo.VisitAgaistAccessionStaging",
-    //    [(int)CommonConst.ImportFileType.Transaction_Detail_Report] = "dbo.TransactionDetailStaging",
-    //    [(int)CommonConst.ImportFileType.Denial_Tracking_Report] = "dbo.DenialTrackingStaging",
-    //    [(int)CommonConst.ImportFileType.Prism_Billing_Sheet] = "dbo.PrismBillingStaging",
-    //    [(int)CommonConst.ImportFileType.Accession_Payment_Report] = "dbo.AccPaymentReportStaging",
-    //    [(int)CommonConst.ImportFileType.Order_LIS] = "dbo.DiagnoseLISStaging",
-    //    [(int)CommonConst.ImportFileType.Diagnos_SampleLIS] = "dbo.DiagnoseLISStaging",
-    //    [(int)CommonConst.ImportFileType.Panel_Group] = "dbo.PanelMasterStaging",
-    //    [(int)CommonConst.ImportFileType.Client_Billing_Sheet] = "dbo.ClientBillingSheet"
-    //};
+	//// map file type -> staging table
+	//private static readonly IReadOnlyDictionary<int, string> StagingByType = new Dictionary<int, string>
+	//{
+	//    [(int)CommonConst.ImportFileType.LIS_Report] = "dbo.LISStaging",
+	//    [(int)CommonConst.ImportFileType.Custom_Collection] = "dbo.CustomCollectionStaging",
+	//    [(int)CommonConst.ImportFileType.Visit_Against_Accession] = "dbo.VisitAgaistAccessionStaging",
+	//    [(int)CommonConst.ImportFileType.Transaction_Detail_Report] = "dbo.TransactionDetailStaging",
+	//    [(int)CommonConst.ImportFileType.Denial_Tracking_Report] = "dbo.DenialTrackingStaging",
+	//    [(int)CommonConst.ImportFileType.Prism_Billing_Sheet] = "dbo.PrismBillingStaging",
+	//    [(int)CommonConst.ImportFileType.Accession_Payment_Report] = "dbo.AccPaymentReportStaging",
+	//    [(int)CommonConst.ImportFileType.Order_LIS] = "dbo.DiagnoseLISStaging",
+	//    [(int)CommonConst.ImportFileType.Diagnos_SampleLIS] = "dbo.DiagnoseLISStaging",
+	//    [(int)CommonConst.ImportFileType.Panel_Group] = "dbo.PanelMasterStaging",
+	//    [(int)CommonConst.ImportFileType.Client_Billing_Sheet] = "dbo.ClientBillingSheet"
+	//};
 
-    private static readonly IReadOnlyDictionary<int, string> ProcByType = new Dictionary<int, string>
-    {
-        #region Cove Files
-        [(int)CommonConst.ImportFileType.Cove_LIS_Report] = "SP_Process_LISMaster_ByFileId",
-        [(int)CommonConst.ImportFileType.Cove_Custom_Collection] = "Sp_ProcessBillingMasterData",
-        [(int)CommonConst.ImportFileType.Cove_Transaction_Detail_Report] = "Sp_ProcessTransactionDetails",
-        [(int)CommonConst.ImportFileType.Cove_Denial_Tracking_Report] = "Sp_ProcessDenialTrackingMaster",
-        [(int)CommonConst.ImportFileType.Cove_Accession_Payment_Report] = "Sp_ProcessAccessionPaymentReport",
+	private static readonly IReadOnlyDictionary<int, string> ProcByType = new Dictionary<int, string>
+	{
+		#region Cove Files
+		[(int)CommonConst.ImportFileType.Cove_LIS_Report] = "SP_Process_LISMaster_ByFileId",
+		[(int)CommonConst.ImportFileType.Cove_Custom_Collection] = "Sp_ProcessBillingMasterData",
+		[(int)CommonConst.ImportFileType.Cove_Transaction_Detail_Report] = "Sp_ProcessTransactionDetails",
+		[(int)CommonConst.ImportFileType.Cove_Denial_Tracking_Report] = "Sp_ProcessDenialTrackingMaster",
+		[(int)CommonConst.ImportFileType.Cove_Accession_Payment_Report] = "Sp_ProcessAccessionPaymentReport",
 		[(int)CommonConst.ImportFileType.Commit_Denial_Report] = "sp_ProcessCommitDenialStaging",
 		[(int)CommonConst.ImportFileType.Commit_Transaction_Report] = "sp_ProcessCommitTransactionReport",
 		#endregion
 
 		#region InHealth_DTR FILES
 		[(int)CommonConst.ImportFileType.InHealthDTR_LIS_Master] = "SP_Process_LISMaster_ByFileId",
-        [(int)CommonConst.ImportFileType.InHealth_CCW] = "Sp_ProcessBillingMasterData",
-        [(int)CommonConst.ImportFileType.DTR_CCW] = "Sp_ProcessBillingMasterData",
-        [(int)CommonConst.ImportFileType.VISIT_AGAINST_ACCESSION_IHDTR] = "Sp_Process_VAA_ByFileId",
-        [(int)CommonConst.ImportFileType.Transaction_Detail_Report_IHDTR] = "Sp_ProcessTransactionDetails",
-        [(int)CommonConst.ImportFileType.InHealth_Denial_Tracking] = "Sp_ProcessDenialTrackingMaster",
-        [(int)CommonConst.ImportFileType.DTR_Denail_Tracking] = "Sp_ProcessDenialTrackingMaster",
-        [(int)CommonConst.ImportFileType.Nexum_Claim_Scrubbing_DTR] = "Sp_ProcessNexusClaimDTRIH",
-        [(int)CommonConst.ImportFileType.Nexum_Claim_Scrubbing_IH] = "Sp_ProcessNexusClaimDTRIH",
-        [(int)CommonConst.ImportFileType.Nexum_Preprocessing_DTR] = "Sp_ProcessNexusClaimDTRIH",
-        [(int)CommonConst.ImportFileType.Nexum_Preprocessing_IH] = "Sp_ProcessNexusClaimDTRIH",
-        #endregion
-    };
+		[(int)CommonConst.ImportFileType.InHealth_CCW] = "Sp_ProcessBillingMasterData",
+		[(int)CommonConst.ImportFileType.DTR_CCW] = "Sp_ProcessBillingMasterData",
+		[(int)CommonConst.ImportFileType.VISIT_AGAINST_ACCESSION_IHDTR] = "Sp_Process_VAA_ByFileId",
+		[(int)CommonConst.ImportFileType.Transaction_Detail_Report_IHDTR] = "Sp_ProcessTransactionDetails",
+		[(int)CommonConst.ImportFileType.InHealth_Denial_Tracking] = "Sp_ProcessDenialTrackingMaster",
+		[(int)CommonConst.ImportFileType.DTR_Denail_Tracking] = "Sp_ProcessDenialTrackingMaster",
+		[(int)CommonConst.ImportFileType.Nexum_Claim_Scrubbing_DTR] = "Sp_ProcessNexusClaimDTRIH",
+		[(int)CommonConst.ImportFileType.Nexum_Claim_Scrubbing_IH] = "Sp_ProcessNexusClaimDTRIH",
+		[(int)CommonConst.ImportFileType.Nexum_Preprocessing_DTR] = "Sp_ProcessNexusClaimDTRIH",
+		[(int)CommonConst.ImportFileType.Nexum_Preprocessing_IH] = "Sp_ProcessNexusClaimDTRIH",
+		#endregion
+	};
 
-    public async Task ProcessImportFilesAsync(ImportFileDto file)
-    {
-        using var connection = _context.CreateConnection();
+	public async Task ProcessImportFilesAsync(ImportFileDto file)
+	{
+		using var connection = _context.CreateConnection();
 
-        // Cast to SqlConnection to access OpenAsync
-        if (connection is SqlConnection sqlConnection)
-        {
-            await sqlConnection.OpenAsync();
-        }
-        else
-        {
-            connection.Open(); // Fallback for other providers
-        }
+		// Cast to SqlConnection to access OpenAsync
+		if (connection is SqlConnection sqlConnection)
+		{
+			await sqlConnection.OpenAsync();
+		}
+		else
+		{
+			connection.Open(); // Fallback for other providers
+		}
 
-        using var transaction = connection.BeginTransaction();
+		using var transaction = connection.BeginTransaction();
 
-        try
-        {
-            int commandTimeout = 2500;
-            await connection.ExecuteAsync("sp_InsertMasterData", transaction: transaction, commandType: CommandType.StoredProcedure, commandTimeout: commandTimeout);
+		try
+		{
+			int commandTimeout = 2500;
+			await connection.ExecuteAsync("sp_InsertMasterData", transaction: transaction, commandType: CommandType.StoredProcedure, commandTimeout: commandTimeout);
 
-            if (file != null)
-            {
-                ////// 1) get ALL related import file ids safely (await, no .Result)
-                ////var ids = (await GetImportFilesByFileType(file.FileType, (int)file.ImportedFileId))
-                ////          ?.Distinct().ToList() ?? new List<int>();
+			if (file != null)
+			{
+				////// 1) get ALL related import file ids safely (await, no .Result)
+				////var ids = (await GetImportFilesByFileType(file.FileType, (int)file.ImportedFileId))
+				////          ?.Distinct().ToList() ?? new List<int>();
 
-                ////// 2) purge staging inside the SAME transaction, parameterized, batched
-                ////if (ids.Count > 0 && StagingByType.TryGetValue(file.FileType, out var table))
-                ////{
-                ////    const int batchSize = 1000; // under 2100-param limit headroom
-                ////    var sql = $"DELETE t FROM {table} AS t WHERE t.ImportedFileID IN @Ids";
+				////// 2) purge staging inside the SAME transaction, parameterized, batched
+				////if (ids.Count > 0 && StagingByType.TryGetValue(file.FileType, out var table))
+				////{
+				////    const int batchSize = 1000; // under 2100-param limit headroom
+				////    var sql = $"DELETE t FROM {table} AS t WHERE t.ImportedFileID IN @Ids";
 
-                ////    foreach (var chunk in ids.Chunk(batchSize))
-                ////    {
-                ////        var delCmd = new CommandDefinition(
-                ////            sql,
-                ////            new { Ids = chunk },
-                ////            transaction: transaction,
-                ////            commandTimeout: commandTimeout,          // consider 0 = infinite if you expect long runs
-                ////            commandType: CommandType.Text);
+				////    foreach (var chunk in ids.Chunk(batchSize))
+				////    {
+				////        var delCmd = new CommandDefinition(
+				////            sql,
+				////            new { Ids = chunk },
+				////            transaction: transaction,
+				////            commandTimeout: commandTimeout,          // consider 0 = infinite if you expect long runs
+				////            commandType: CommandType.Text);
 
-                ////        await connection.ExecuteAsync(delCmd);
-                ////    }
-                ////}
+				////        await connection.ExecuteAsync(delCmd);
+				////    }
+				////}
 
-                // 3) run the processing proc, still inside the SAME transaction & explicit timeout
-                if (ProcByType.TryGetValue(file.FileType, out var proc))
-                {
-                    var p = new DynamicParameters();
-                    p.Add("@FileId", file.ImportedFileId, DbType.Int32);
+				// 3) run the processing proc, still inside the SAME transaction & explicit timeout
+				if (ProcByType.TryGetValue(file.FileType, out var proc))
+				{
+					var p = new DynamicParameters();
+					p.Add("@FileId", file.ImportedFileId, DbType.Int32);
 
-                    var procCmd = new CommandDefinition(
-                        proc,
-                        parameters: p,
-                        transaction: transaction,
-                        commandTimeout: commandTimeout,             // or 0 for infinite
-                        commandType: CommandType.StoredProcedure);
+					var procCmd = new CommandDefinition(
+						proc,
+						parameters: p,
+						transaction: transaction,
+						commandTimeout: commandTimeout,             // or 0 for infinite
+						commandType: CommandType.StoredProcedure);
 
-                    await connection.ExecuteAsync(procCmd);
-                }
-            }
+					await connection.ExecuteAsync(procCmd);
+				}
+			}
 
-            transaction.Commit();
-        }
-        catch (Exception ex)
-        {
-            transaction.Rollback();
-            throw ex;
-        }
-    }
+			transaction.Commit();
+		}
+		catch (Exception ex)
+		{
+			transaction.Rollback();
+			throw ex;
+		}
+	}
 
 
-    //public async Task ProcessImportFilesGroupAsync(List<ImportFileDto> files)
-    //{
-    //    if (files == null || !files.Any())
-    //        throw new ArgumentException("File list is empty or null.");
+	//public async Task ProcessImportFilesGroupAsync(List<ImportFileDto> files)
+	//{
+	//    if (files == null || !files.Any())
+	//        throw new ArgumentException("File list is empty or null.");
 
-    //    using var transaction = await _dbContext.Database.BeginTransactionAsync();
+	//    using var transaction = await _dbContext.Database.BeginTransactionAsync();
 
-    //    try
-    //    {
-    //        await _dbContext.Database.ExecuteSqlInterpolatedAsync($"EXEC sp_InsertMasterData");
+	//    try
+	//    {
+	//        await _dbContext.Database.ExecuteSqlInterpolatedAsync($"EXEC sp_InsertMasterData");
 
-    //        var fileGroups = files
-    //            .Where(f => f.ImportedFileId != 0)
-    //            .GroupBy(f => (ImportFileType)f.FileType)
-    //            .ToDictionary(g => g.Key, g => string.Join(",", g.Select(f => f.ImportedFileId)));
+	//        var fileGroups = files
+	//            .Where(f => f.ImportedFileId != 0)
+	//            .GroupBy(f => (ImportFileType)f.FileType)
+	//            .ToDictionary(g => g.Key, g => string.Join(",", g.Select(f => f.ImportedFileId)));
 
-    //        fileGroups.TryGetValue(ImportFileType.LIS_Report, out string lisFileId);
-    //        fileGroups.TryGetValue(ImportFileType.Visit_Against_Accession, out string vaaFileId);
-    //        fileGroups.TryGetValue(ImportFileType.Custom_Collection, out string customCollectionFileId);
-    //        fileGroups.TryGetValue(ImportFileType.Prism_Billing_Sheet, out string billingSheetFileId);
-    //        fileGroups.TryGetValue(ImportFileType.Denial_Tracking_Report, out string denialFileId);
-    //        fileGroups.TryGetValue(ImportFileType.Transaction_Detail_Report, out string transFileId);
+	//        fileGroups.TryGetValue(ImportFileType.LIS_Report, out string lisFileId);
+	//        fileGroups.TryGetValue(ImportFileType.Visit_Against_Accession, out string vaaFileId);
+	//        fileGroups.TryGetValue(ImportFileType.Custom_Collection, out string customCollectionFileId);
+	//        fileGroups.TryGetValue(ImportFileType.Prism_Billing_Sheet, out string billingSheetFileId);
+	//        fileGroups.TryGetValue(ImportFileType.Denial_Tracking_Report, out string denialFileId);
+	//        fileGroups.TryGetValue(ImportFileType.Transaction_Detail_Report, out string transFileId);
 
-    //        await _dbContext.Database.ExecuteSqlInterpolatedAsync(
-    //            $"EXEC SP_Process_LISMaster_From_Staging {lisFileId}, {vaaFileId}, {customCollectionFileId}, {billingSheetFileId}");
+	//        await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+	//            $"EXEC SP_Process_LISMaster_From_Staging {lisFileId}, {vaaFileId}, {customCollectionFileId}, {billingSheetFileId}");
 
-    //        await _dbContext.Database.ExecuteSqlInterpolatedAsync(
-    //            $"EXEC Sp_ProcessBillingMasterData {customCollectionFileId}");
+	//        await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+	//            $"EXEC Sp_ProcessBillingMasterData {customCollectionFileId}");
 
-    //        await _dbContext.Database.ExecuteSqlInterpolatedAsync(
-    //            $"EXEC Sp_ProcessDenialTrackingMaster {denialFileId}");
+	//        await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+	//            $"EXEC Sp_ProcessDenialTrackingMaster {denialFileId}");
 
-    //        await _dbContext.Database.ExecuteSqlInterpolatedAsync(
-    //            $"EXEC Sp_ProcessTransactionDetails {transFileId}");
+	//        await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+	//            $"EXEC Sp_ProcessTransactionDetails {transFileId}");
 
-    //        foreach (var file in files)
-    //        {
-    //            file.ProcessedOn = DateTime.Now;
-    //            file.FileStatus = (int)CommonConst.FileStatusEnum.ImportSuccess;
-    //        }
+	//        foreach (var file in files)
+	//        {
+	//            file.ProcessedOn = DateTime.Now;
+	//            file.FileStatus = (int)CommonConst.FileStatusEnum.ImportSuccess;
+	//        }
 
-    //        await UpdateImportFilesAsync(files);
-    //        await transaction.CommitAsync();
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        await transaction.RollbackAsync();
-    //        //.LogError(ex, "An error occurred while processing import files.");
-    //        throw new ApplicationException("An error occurred while processing import files.", ex);
-    //    }
-    //}
+	//        await UpdateImportFilesAsync(files);
+	//        await transaction.CommitAsync();
+	//    }
+	//    catch (Exception ex)
+	//    {
+	//        await transaction.RollbackAsync();
+	//        //.LogError(ex, "An error occurred while processing import files.");
+	//        throw new ApplicationException("An error occurred while processing import files.", ex);
+	//    }
+	//}
 
-    public async Task<List<ImportFileDto>> GetImportFilesAsync()
-    {
-        const string query = @"SELECT a.ImportedFileID AS ImportedFileId, a.ImportFileName, b.FileTypeName, c.FileStatus AS FileStatusName,
+	public async Task<List<ImportFileDto>> GetImportFilesAsync()
+	{
+		const string query = @"SELECT a.ImportedFileID AS ImportedFileId, a.ImportFileName, b.FileTypeName, c.FileStatus AS FileStatusName,
                a.ExcelRowCount, a.ImportedRowCount, a.ImportedOn, a.ProcessedOn, a.LabId, a.ImportFilePath, c.FileStatusId 
         FROM ImportedFiles a WITH (NOLOCK)
         JOIN ImportFilTypes b WITH (NOLOCK) ON a.FileType = b.FileTypeId
         JOIN FileStatuses c WITH (NOLOCK) ON a.FileStatus = c.FileStatusId";
 
-        using var connection = _context.CreateConnection();
-        var results = await connection.QueryAsync<ImportFileDto>(query);
-        return results.ToList();
-    }
+		using var connection = _context.CreateConnection();
+		var results = await connection.QueryAsync<ImportFileDto>(query);
+		return results.ToList();
+	}
 
-    public async Task<List<ImportFileTypesDto>> GetImportFilesTypesAsync()
-    {
-        const string query = "Select FileTypeId,(CAST(SeqNo AS VARCHAR)+' . ' + FileTypeName) FileTypeName from ImportFilTypes WITH (NOLOCK)  WHERE IsActive = 1  ORDER BY SeqNo";
-        using var connection = _context.CreateConnection();
-        var results = await connection.QueryAsync<ImportFileTypesDto>(query);
-        return results.ToList();
-    }
+	public async Task<List<ImportFileTypesDto>> GetImportFilesTypesAsync()
+	{
+		const string query = "Select FileTypeId,(CAST(SeqNo AS VARCHAR)+' . ' + FileTypeName) FileTypeName from ImportFilTypes WITH (NOLOCK)  WHERE IsActive = 1  ORDER BY SeqNo";
+		using var connection = _context.CreateConnection();
+		var results = await connection.QueryAsync<ImportFileTypesDto>(query);
+		return results.ToList();
+	}
 
-    public async Task<List<int>> GetImportFilesByFileType(int fileType, int fileId)
-    {
-        const string sql = @"
+	public async Task<List<int>> GetImportFilesByFileType(int fileType, int fileId)
+	{
+		const string sql = @"
         SELECT ImportedFileID
         FROM dbo.ImportedFiles WITH (NOLOCK)
         WHERE FileType = @fileType AND ImportedFileID = @fileId;";
 
-        using var connection = _context.CreateConnection();
-        var results = await connection.QueryAsync<int>(sql, new { fileType, fileId });
-        return results.ToList();
-    }
+		using var connection = _context.CreateConnection();
+		var results = await connection.QueryAsync<int>(sql, new { fileType, fileId });
+		return results.ToList();
+	}
 
-    public async Task<List<ReportDownloadSts>> GetReportDownloadStslst()
-    {
-        const string query = "SELECT a.[ReportID],a.[ReportName],a.[ReportType],a.[ReportServerPath],a.[ReportStatus],a.[CreatedOn]," +
-             "b.FileStatus, a.LogString FROM [dbo].[ReportDownloadSts] a WITH (NOLOCK) join FileStatuses b WITH (NOLOCK) on a.ReportStatus = b.FileStatusId";
+	public async Task<List<ReportDownloadSts>> GetReportDownloadStslst()
+	{
+		const string query = "SELECT a.[ReportID],a.[ReportName],a.[ReportType],a.[ReportServerPath],a.[ReportStatus],a.[CreatedOn]," +
+			 "b.FileStatus, a.LogString FROM [dbo].[ReportDownloadSts] a WITH (NOLOCK) join FileStatuses b WITH (NOLOCK) on a.ReportStatus = b.FileStatusId";
 
-        using var connection = _context.CreateConnection();
-        var results = await connection.QueryAsync<ReportDownloadSts>(query);
-        return results.ToList();
-    }
+		using var connection = _context.CreateConnection();
+		var results = await connection.QueryAsync<ReportDownloadSts>(query);
+		return results.ToList();
+	}
 
-    public async Task<ImportFileDto> GetImportFileById(int fileId)
-    {
-        const string query = @"
+	public async Task<ImportFileDto> GetImportFileById(int fileId)
+	{
+		const string query = @"
         SELECT [ImportedFileID], [ImportFileName], [ExcelRowCount], [ImportedRowCount], 
                [FileStatus], [FileType], [ImportedOn], [ProcessedOn], [LabId], [ImportFilePath]
         FROM [dbo].[ImportedFiles] WITH (NOLOCK)
         WHERE ImportedFileID = @FileId";  // parameterized
 
 
-        using var connection = _context.CreateConnection();
-        // Use parameterized query to avoid SQL Injection
-        var result = await connection.QuerySingleOrDefaultAsync<ImportFileDto>(query, new { FileId = fileId });
+		using var connection = _context.CreateConnection();
+		// Use parameterized query to avoid SQL Injection
+		var result = await connection.QuerySingleOrDefaultAsync<ImportFileDto>(query, new { FileId = fileId });
 
-        return result;
-    }
+		return result;
+	}
 
-    public async Task<List<FileLog>> InsertFileLog(List<FileLog> fileLogs)
-    {
-        if (!fileLogs.Any())
-            return new List<FileLog>();
+	public async Task<List<FileLog>> InsertFileLog(List<FileLog> fileLogs)
+	{
+		if (!fileLogs.Any())
+			return new List<FileLog>();
 
-        const string sql = @"INSERT INTO [dbo].[ImportFileLogs] ([ImportFileId],[LogType],[LogMessage],[RowNo],[ColumnName],[CreatedOn])
+		const string sql = @"INSERT INTO [dbo].[ImportFileLogs] ([ImportFileId],[LogType],[LogMessage],[RowNo],[ColumnName],[CreatedOn])
                                      VALUES (@ImportFileId,@LogType,@LogMessage,@RowNo,@ColumnName,GETDATE());";
-        using var connection = _context.CreateConnection();
-        foreach (var log in fileLogs)
-        {
-            await connection.ExecuteAsync(sql, log);
-        }
-        return fileLogs;
-    }
+		using var connection = _context.CreateConnection();
+		foreach (var log in fileLogs)
+		{
+			await connection.ExecuteAsync(sql, log);
+		}
+		return fileLogs;
+	}
 
-    public async Task<ReportDownloadSts> InsertReportDownloadSts(ReportDownloadSts reportDownloadSts)
-    {
-        const string sql = @"INSERT INTO [dbo].[ReportDownloadSts]([ReportName],[ReportType],[ReportStatus],[CreatedOn])
+	public async Task<ReportDownloadSts> InsertReportDownloadSts(ReportDownloadSts reportDownloadSts)
+	{
+		const string sql = @"INSERT INTO [dbo].[ReportDownloadSts]([ReportName],[ReportType],[ReportStatus],[CreatedOn])
                                      VALUES (@ReportName,@ReportType,@ReportStatus,GETDATE());";
-        using var connection = _context.CreateConnection();
-        await connection.ExecuteAsync(sql, reportDownloadSts);
-        return reportDownloadSts;
-    }
+		using var connection = _context.CreateConnection();
+		await connection.ExecuteAsync(sql, reportDownloadSts);
+		return reportDownloadSts;
+	}
 
-    public async Task<List<FileLog>> GetFileLogsById(int fileId)
-    {
-        const string query = @"SELECT LogType, LogMessage, RowNo, ColumnName, CreatedOn 
+	public async Task<List<FileLog>> GetFileLogsById(int fileId)
+	{
+		const string query = @"SELECT LogType, LogMessage, RowNo, ColumnName, CreatedOn 
                            FROM ImportFileLogs WITH (NOLOCK)
                            WHERE ImportFileId = @FileId 
                            ORDER BY CreatedOn";
 
 
-        using var connection = _context.CreateConnection();
-        var results = await connection.QueryAsync<FileLog>(query, new { FileId = fileId });
-        return results.ToList();
-    }
+		using var connection = _context.CreateConnection();
+		var results = await connection.QueryAsync<FileLog>(query, new { FileId = fileId });
+		return results.ToList();
+	}
 
-    public async Task<ReportDownloadSts> GetDownloadReportById(int fileId)
-    {
-        const string query = "select * from ReportDownloadSts WITH (NOLOCK) Where ReportID = @FileId";  // parameterized
+	public async Task<ReportDownloadSts> GetDownloadReportById(int fileId)
+	{
+		const string query = "select * from ReportDownloadSts WITH (NOLOCK) Where ReportID = @FileId";  // parameterized
 
-        using var connection = _context.CreateConnection();
-        // Use parameterized query to avoid SQL Injection
-        var result = await connection.QuerySingleOrDefaultAsync<ReportDownloadSts>(query, new { FileId = fileId });
+		using var connection = _context.CreateConnection();
+		// Use parameterized query to avoid SQL Injection
+		var result = await connection.QuerySingleOrDefaultAsync<ReportDownloadSts>(query, new { FileId = fileId });
 
-        return result;
-    }
+		return result;
+	}
 
-    public async Task<List<LabMaster>> GetLabMaster()
-    {
-        const string query = "SELECT LabId, LabName, ConnectionKey FROM Labs WITH (NOLOCK) WHERE IsActive = 1";
-        using var connection = _context.CreateConnection();
+	public async Task<List<LabMaster>> GetLabMaster()
+	{
+		const string query = "SELECT LabId, LabName, ConnectionKey FROM Labs WITH (NOLOCK) WHERE IsActive = 1";
+		using var connection = _context.CreateConnection();
 
-        var result = await connection.QueryAsync<LabMaster>(query);
-        return result.ToList();
-    }
+		var result = await connection.QueryAsync<LabMaster>(query);
+		return result.ToList();
+	}
 
-    public async Task<ImportFilType> GetImportFileType(int fileTypeId)
-    {
-        const string query = "SELECT FileTypeId,FileTypeName,LabId,IsActive,SeqNo,TemplateFileName FROM ImportFilTypes Where FileTypeId = @FileTypeId";
+	public async Task<ImportFilType> GetImportFileType(int fileTypeId)
+	{
+		const string query = "SELECT FileTypeId,FileTypeName,LabId,IsActive,SeqNo,TemplateFileName FROM ImportFilTypes Where FileTypeId = @FileTypeId";
 
-        using var connection = _context.CreateConnection();
-        // Use parameterized query to avoid SQL Injection
-        var result = await connection.QuerySingleOrDefaultAsync<ImportFilType>(query, new { FileTypeId = fileTypeId });
+		using var connection = _context.CreateConnection();
+		// Use parameterized query to avoid SQL Injection
+		var result = await connection.QuerySingleOrDefaultAsync<ImportFilType>(query, new { FileTypeId = fileTypeId });
 
-        return result;
-    }
+		return result;
+	}
+
+	public async Task<List<Models.DownloadReportType>> GetDownloadReportTypes()
+	{
+		const string query = "Select ReportTypeId,ReportName from DownloadReportTypes Where IsActive = 1 ORDER BY SeqNo";
+
+		using var connection = _context.CreateConnection();
+		// Use parameterized query to avoid SQL Injection
+		var result = await connection.QueryAsync<Models.DownloadReportType>(query);
+		return result.ToList();
+	}
+
 
 }

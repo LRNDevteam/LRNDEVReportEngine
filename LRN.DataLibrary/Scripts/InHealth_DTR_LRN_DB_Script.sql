@@ -63,6 +63,9 @@ GO
 /****** Object:  StoredProcedure [dbo].[sp_GetDenialLineLevelReport]******/
 DROP PROCEDURE [dbo].[sp_GetDenialLineLevelReport]
 GO
+/****** Object:  StoredProcedure [dbo].[sp_GetDenialClaimLevelReport]******/
+DROP PROCEDURE [dbo].[sp_GetDenialClaimLevelReport]
+GO
 /****** Object:  StoredProcedure [dbo].[sp_GETDenialClaimLevel]******/
 DROP PROCEDURE [dbo].[sp_GETDenialClaimLevel]
 GO
@@ -446,7 +449,7 @@ ALTER TABLE [dbo].[ICDCodeMaster] DROP CONSTRAINT [DF__ICDCodeMa__Creat__0CC5D56
 GO
 ALTER TABLE [dbo].[ICDCodeMaster] DROP CONSTRAINT [DF__ICDCodeMa__IsAct__0BD1B136]
 GO
-ALTER TABLE [dbo].[DownloadReportTypes] DROP CONSTRAINT [DF__DownloadR__IsAct__0ADD8CFD]
+ALTER TABLE [dbo].[DownloadReportTypes] DROP CONSTRAINT [DF__DownloadR__IsAct__60FDF878]
 GO
 ALTER TABLE [dbo].[DiagnoseLISStaging] DROP CONSTRAINT [DF__DiagnoseL__Impor__09E968C4]
 GO
@@ -1479,7 +1482,7 @@ BEGIN
             CPTCodes,
             -- Use normalized date if you created it; otherwise keep PaymentDate
             PaymentDate = ISNULL(PaymentDate, TRY_CONVERT(date, PaymentDate)),
-            STRING_AGG(PaymentReasonCode, ';') AS PaymentReasonCode
+            STRING_AGG(OrginalDenialCode, ';') AS PaymentReasonCode
         FROM dbo.DenialTrackingMaster
         WHERE VisitNumber = @visitno and CPTCodes = @cptCode
           AND PaymentReasonCode IS NOT NULL
@@ -1533,7 +1536,7 @@ BEGIN
             CPTCodes,
             -- Use normalized date if you created it; otherwise keep PaymentDate
             PaymentDate = ISNULL(PaymentDate, TRY_CONVERT(date, PaymentDate)),
-            STRING_AGG(PaymentReasonCode, ';') AS PaymentReasonCode
+            STRING_AGG(OrginalDenialCode, ';') AS PaymentReasonCode
         FROM dbo.DenialTrackingMaster
         WHERE VisitNumber = @visitno
           AND PaymentReasonCode IS NOT NULL
@@ -1783,6 +1786,7 @@ CREATE TABLE [dbo].[DenialTrackingMaster](
 	[UpdatedOn] [datetime] NULL,
 	[BillingLab] [nvarchar](30) NULL,
 	[DenialDescription] [nvarchar](max) NULL,
+	[OrginalDenialCode] [nvarchar](50) NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[DenailTrackID] ASC
@@ -2397,7 +2401,7 @@ CREATE TABLE [dbo].[DownloadReportTypes](
 	[ReportTypeId] [int] NOT NULL,
 	[ReportName] [varchar](50) NOT NULL,
 	[IsActive] [bit] NULL,
-	[LabId] [int] NULL,
+	[SeqNo] [int] NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[ReportTypeId] ASC
@@ -4594,7 +4598,9 @@ BEGIN
 		CONVERT(VARCHAR, CPS.CheckDate, 101)	CheckDate,
 		CONVERT(VARCHAR, CPS.PaymentPostedDate, 101)	PaymentPostedDate,
 		CPS.CheckNumber,
-        CASE WHEN md.FirstBillDate IS NOT NULL THEN 'Billed' ELSE 'Not Billed' END AS BilledNotBilled,
+        CASE 
+		WHEN FinalStatus IN ('Patient Payment','Partial Patient Payment') THEN 'Billed' 
+		WHEN md.FirstBillDate IS NOT NULL THEN 'Billed' ELSE 'Not Billed' END AS BilledNotBilled,
         POS.POS,
         TOS.TOS,
         CPS.CPTCodeWithUnits CPTCode,
@@ -4669,6 +4675,30 @@ JOIN #BillingMaster BM ON CBD.VisitNumber = BM.VisitNumber
 WHERE rn = 1 and CBD.DenailCode IS NOT NULL
 
 END
+GO
+/****** Object:  StoredProcedure [dbo].[sp_GetDenialClaimLevelReport]******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+  
+  
+create   Procedure [dbo].[sp_GetDenialClaimLevelReport]  
+AS BEGIN   
+  
+SELECT VisitNumber,PatientName,PatientDOB,PanelCarrier,PanelName,ReferringProvider,BeginDOS,  
+ChargeEntryDate,FirstBillDate, ROW_NUMBER() OVER (PARTITION BY VisitNumber ORDER BY   
+CASE WHEN FirstBillDate IS NULL THEN 1 ELSE 0 END,FirstBillDate) AS rn INTO #BillingMaster FROM BillingMaster   
+  
+  
+Select BM.VisitNumber,CBD.AccessionNo,PatientName,PatientDOB,PanelCarrier,ReferringProvider,BeginDOS,ChargeEntryDate,CBD.FirstBillDate,  
+CPTCodeWithUnits CPTCode,ICDCodes,DenailCode DenialCode,DenialDescription,DenialPostedDate,BilledAmount,AllowedAmount,InsurancePayment,  
+PatientPaidAmount,InsuranceAdjustment,PatientAdjustment,InsuranceBalance,PatientBalance,TotalBalance  
+From ClaimsLevelStatus CBD   
+JOIN #BillingMaster BM ON CBD.VisitNumber = BM.VisitNumber   
+WHERE rn = 1 and CBD.DenailCode IS NOT NULL  
+  
+END  
 GO
 /****** Object:  StoredProcedure [dbo].[sp_GetDenialLineLevelReport]******/
 SET ANSI_NULLS ON
@@ -4749,19 +4779,21 @@ BEGIN
 		BP.BillingProvider,
 		PerformingLab,
 		ResultedStatus,
-		IsBilled [BillingStatus],
+		--IsBilled [BillingStatus],
+		Replace(IsBilled,'Un Billed','Not Billed') [BillingStatus],
+
         SS.SpecimenStatusName,
   --      OG.OperationsGroup,
 		--pg.PanelCategory PanelGroup,
         CASE WHEN DaystoReceive = 0 THEN 1 ELSE DaystoReceive END DaystoReceive ,
         CASE WHEN DaystoResult = 0 THEN 1 ELSE DaystoResult END DaystoResult  ,
         CASE WHEN DaystoBill = 0 THEN 1 ELSE DaystoBill END DaystoBill ,
-        ClientStatus,
+       -- ClientStatus,
         VisitNumberIH VisitNumber,
 		--VisitNumberDTR [Billed - DTR AMD],
-		CASE WHEN BillingSubStatus = 'Billed Via DTR AMD' THEN 'DTR'
-		WHEN BillingSubStatus IN ('Billed Via DTR & IH AMD','Billed Via IH AMD') THEN 'Billed'
-		ELSE 'UnBilled' END AS [Billed / UnBilled],
+		--CASE WHEN BillingSubStatus = 'Billed Via DTR AMD' THEN 'DTR'
+		--WHEN BillingSubStatus IN ('Billed Via DTR & IH AMD','Billed Via IH AMD') THEN 'Billed'
+		--ELSE 'UnBilled' END AS [Billed / UnBilled],
         LIS.BillingStatus [NewStatus],
 		BillingSubStatus,
 		CONVERT(VARCHAR, LIS.FirstBilledDateIH, 101) [FirstBilledDate],
@@ -4805,8 +4837,9 @@ BEGIN
         b.VisitNumber,
         b.CPTCode,
         b.PatientName,
-		CAST(B.PatientDOB AS DATE) AS  PatientDOB, 
-        PanelCarrier PayerName,
+		--CAST(B.PatientDOB AS DATE) AS  PatientDOB, 
+        CONVERT(VARCHAR, B.PatientDOB, 101) AS  PatientDOB,
+		PanelCarrier PayerName,
         PayerType,
         BillingProvider,
 		CAST(BeginDOS AS DATE) AS   BeginDOS,
@@ -4967,7 +5000,9 @@ BEGIN
 		CONVERT(VARCHAR, CPS.CheckDate, 101)	CheckDate,
 		CONVERT(VARCHAR, CPS.PaymentPostedDate, 101)	PaymentPostedDate,
 		CPS.CheckNumber,
-        CASE WHEN md.FirstBillDate IS NOT NULL THEN 'Billed' ELSE 'Not Billed' END AS BilledNotBilled,
+        CASE 
+		WHEN FinalStatus IN ('Patient Payment','Partial Patient Payment') THEN 'Billed' 
+		WHEN md.FirstBillDate IS NOT NULL THEN 'Billed' ELSE 'Not Billed' END AS BilledNotBilled,
         POS.POS,
         TOS.TOS,
         CPS.CPTCodeWithUnits CPTCode,
@@ -5836,27 +5871,59 @@ BEGIN
 
         -- Load unique records into a temp table
         SELECT DISTINCT  
-            DTM.VisitNumber,
-            LTRIM(RTRIM(SUBSTRING(DTM.ChargeCode, 1, 5))) AS CPTCode,
-            DTM.TransactionCarrierCode,
-            DTM.PaymentDate,
-            DTM.PaymentReasonCode,
-            DTM.ServiceDate,
-            DTM.Charge,
-            DTM.TotalBalance,
-            DTM.TotalAdjustment,
-            DTM.ReasonAmount,
-            DTM.DenialUser,
-            DTM.LastAction,
-            DTM.NextAction,
-            DTM.LastActionDate,
-            DTM.NextActionDate,
-            DTM.Note,
-            DTM.DenialCategoryCode,
-            DTM.DenialCategoryDescription,
+			DTM.VisitNumber,
+			LTRIM(RTRIM(SUBSTRING(DTM.ChargeCode, 1, 5))) AS CPTCode,
+			DTM.TransactionCarrierCode,
+			DTM.PaymentDate,
+
+			REPLACE(REPLACE(PaymentReasonCode,'PI','CO'),'PR','CO')      PaymentReasonCode,          -- fixed code(s)
+			DTM.PaymentReasonCode AS OrginalDenialCode,  -- original code(s)
+
+			DTM.ServiceDate,
+			DTM.Charge,
+			DTM.TotalBalance,
+			DTM.TotalAdjustment,
+			DTM.ReasonAmount,
+			DTM.DenialUser,
+			DTM.LastAction,
+			DTM.NextAction,
+			DTM.LastActionDate,
+			DTM.NextActionDate,
+			DTM.Note,
+			DTM.DenialCategoryCode,
+			DTM.DenialCategoryDescription,
 			DTM.PaymentReasonDescription
-        INTO #DenialTrackingDetail
-        FROM DenialTrackingStaging DTM WHERE (ImportedFileID = @FileId OR @FileId IS NULL);
+		INTO #DenialTrackingDetail
+		FROM DenialTrackingStaging DTM
+		--CROSS APPLY
+		--(
+  --  SELECT
+  --      PaymentReasonCode =
+  --      CASE
+  --          WHEN DTM.PaymentReasonCode IS NULL THEN NULL
+  --          ELSE
+  --              STUFF((
+  --                  SELECT ';' +
+  --                         CASE
+  --                             WHEN token LIKE 'PI%' THEN 'CO' + SUBSTRING(token, 3, 8000)
+  --                             WHEN token LIKE 'PR%' THEN 'CO' + SUBSTRING(token, 3, 8000)
+  --                             ELSE token
+  --                         END
+  --                  FROM (
+  --                      SELECT
+  --                          LTRIM(RTRIM(j.[value])) AS token,
+  --                          TRY_CONVERT(int, j.[key]) AS ord
+  --                      FROM OPENJSON(
+  --                          '["' + REPLACE(STRING_ESCAPE(DTM.PaymentReasonCode, 'json'), ';', '","') + '"]'
+  --                      ) j
+  --                  ) s
+  --                  ORDER BY s.ord
+  --                  FOR XML PATH(''), TYPE
+  --              ).value('.', 'nvarchar(max)'), 1, 1, '')
+		--		END
+		--) pr
+		WHERE (DTM.ImportedFileID = @FileId OR @FileId IS NULL);
+
 
         
         
@@ -5881,11 +5948,11 @@ BEGIN
                 [Note],
                 [DenialCategoryCode],
                 [DenialCategoryDEscription],
-				DenialDescription,BillingLab
+				DenialDescription,BillingLab,OrginalDenialCode
             )
          SELECT dt.VisitNumber,CPTCode,TransactionCarrierCode,PaymentDate,PaymentReasonCode,ServiceDate,dt.Charge,TotalBalance,
 		 TotalAdjustment,ReasonAmount,DenialUser,LastAction,LastActionDate,NextAction,NextActionDate,Note,DenialCategoryCode,
-		 DenialCategoryDescription,PaymentReasonDescription,@LabName
+		 DenialCategoryDescription,PaymentReasonDescription,@LabName,OrginalDenialCode
 		 From #DenialTrackingDetail dt left join LISMaster lis on dt.VisitNumber = lis.VisitNumberIH
 
 
@@ -5952,7 +6019,8 @@ BEGIN
         -------------------------------------------------------------------------------
         -- 1) Billable vs Other Samples (baseline)
         -------------------------------------------------------------------------------
-        UPDATE L
+   
+		     UPDATE L
         SET BillingStatus =
             CASE 
                 WHEN LTRIM(RTRIM(L.Entry_Status)) = 'Sent to Billing' THEN 'Billable'
@@ -5960,25 +6028,27 @@ BEGIN
             END
         FROM dbo.LISMaster AS L;
 
+
         -------------------------------------------------------------------------------
         -- 2) Duplicate
         --    If BillingStatus = 'Other Samples' AND Accession is duplicated anywhere,
         --    overwrite to 'Duplicate'. (Logic unchanged)
         -------------------------------------------------------------------------------
      
-		;WITH cte AS
+			;WITH cte AS
 		(
 			SELECT  s.*,
 					rn = ROW_NUMBER() OVER
 						 (
 							 PARTITION BY AccessionNo      -- put your grouping columns here
 							 ORDER BY CASE 
-										 WHEN Entry_Status = 'Complete'   THEN 1  -- keep this as main
+										 WHEN Entry_Status NOT IN ('Incomplete')    THEN 1  -- keep this as main
 										 WHEN Entry_Status = 'Incomplete' THEN 2  -- treat this as duplicate
 										 ELSE 3
 									  END
 						 )
-			FROM    LISMaster s WHERE LTRIM(RTRIM(Entry_Status)) <> 'Sent to Billing'
+						 
+			FROM    LISMaster s
 		)
 		UPDATE cte
 		SET    BillingStatus = CASE WHEN rn > 1 THEN 'Duplicate' ELSE 'Other Samples' END;
@@ -6000,8 +6070,20 @@ BEGIN
 		JOIN DuplicatedAccessions AS DA
 			ON LTRIM(RTRIM(LM.AccessionNo)) = DA.AccessionNo
 		WHERE LTRIM(RTRIM(LM.BillingStatus)) = 'Other Samples';
+		     
+			 
 
-
+        -------------------------------------------------------------------------------
+        -- 1) Billable vs Other Samples (baseline)
+        -------------------------------------------------------------------------------
+   
+		     UPDATE L
+        SET BillingStatus =
+            CASE 
+                WHEN LTRIM(RTRIM(L.Entry_Status)) = 'Sent to Billing' THEN 'Billable'
+                ELSE BillingStatus
+            END
+        FROM dbo.LISMaster AS L;
 
         -------------------------------------------------------------------------------
         -- 4) Self-Pay (logic unchanged; only added LTRIM/RTRIM)
@@ -6013,8 +6095,13 @@ BEGIN
                 LTRIM(RTRIM(UPPER(OS.PrimaryInsurancePayer))) IN ('SELF','SELF PAY','PRIVATE PAY','PAY','SELF PA')
               ) AND BillingStatus IN ('Other Samples','Billable');
 
-		UPDATE LISMaster SET BillingStatus = 'Self-Pay' WHERE LTRIM(RTRIM(UPPER(PrimaryInsurancePayer))) IN ('SEL','SE')
-		AND LTRIM(RTRIM(UPPER(Insurance))) IN ('SELF PAY') AND Entry_Status NOT IN ('Incomplete')
+			UPDATE LISMaster SET BillingStatus = 'Self-Pay' WHERE (LTRIM(RTRIM(UPPER(PrimaryInsurancePayer))) IN ('SEL','SE'))
+			AND LTRIM(RTRIM(UPPER(PrimaryInsurancePayer))) NOT IN ('SELECT HEALTH') AND LTRIM(RTRIM(UPPER(Insurance))) NOT IN ('SELECT HEALTH')
+			AND Entry_Status NOT IN ('Incomplete')
+
+			UPDATE LISMaster SET BillingStatus = 'Self-Pay' WHERE (LTRIM(RTRIM(UPPER(Insurance))) IN ('SELF PAY')) 
+			AND LTRIM(RTRIM(UPPER(Insurance))) NOT IN ('SELECT HEALTH') AND LTRIM(RTRIM(UPPER(PrimaryInsurancePayer))) NOT IN ('SELECT HEALTH')
+			AND Entry_Status NOT IN ('Incomplete')
 
 		;WITH cte AS
 		(
@@ -6029,7 +6116,7 @@ BEGIN
 			OR LTRIM(RTRIM(UPPER(Insurance))) IN ('SELF PAY')
 		)
 		UPDATE cte
-		SET    BillingStatus = CASE WHEN rn > 1 THEN 'Duplicate' ELSE 'SELF PAY' END;
+		SET    BillingStatus = CASE WHEN rn > 1 THEN 'Duplicate' ELSE 'Self-Pay' END;
 
         -------------------------------------------------------------------------------
         -- Billing Sub Status (logic unchanged; only added LTRIM/RTRIM on text checks)
