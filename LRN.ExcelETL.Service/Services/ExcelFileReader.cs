@@ -293,16 +293,35 @@ public class ExcelFileReader : IFileReader
         return headerMap;
     }
 
+    // Columns that are NOT expected to exist in the Excel header row
+    // (because you fill them in code before bulk copy)
+    private static readonly HashSet<string> HeaderIgnoreSqlColumns =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+        "ImportedFileID"
+            // add more if needed: "CreatedOn", "CreatedBy", "UpdatedOn", etc.
+        };
+
     private void ValidateHeaders(Dictionary<string, int> headerMap, ExcelSheetMapping mapping)
     {
+        // Only validate required columns that are expected to be present in the Excel header
         var missing = mapping.Columns
-            .Where(c => c.Required && !headerMap.ContainsKey(c.ExcelColumn))
+            .Where(c =>
+                c.Required &&
+                !string.IsNullOrWhiteSpace(c.ExcelColumn) &&
+                (string.IsNullOrWhiteSpace(c.SqlColumn) || !HeaderIgnoreSqlColumns.Contains(c.SqlColumn)) &&
+                !headerMap.ContainsKey(c.ExcelColumn))
             .Select(c => c.ExcelColumn)
             .ToList();
 
         if (missing.Any())
         {
-            ImportLog.Add(new FileLog { ImportFileId = _ImportFileId, LogType = "Error", LogMessage = $"Missing required column(s): {string.Join(", ", missing)}" });
+            ImportLog.Add(new FileLog
+            {
+                ImportFileId = _ImportFileId,
+                LogType = "Error",
+                LogMessage = $"Missing required column(s): {string.Join(", ", missing)}"
+            });
 
             throw new Exception($"Missing required column(s): {string.Join(", ", missing)}");
         }
@@ -312,6 +331,17 @@ public class ExcelFileReader : IFileReader
     {
         try
         {
+            // Only columns we expect to appear in Excel header
+            var expectedCols = mapping.Columns
+                .Where(c =>
+                    !string.IsNullOrWhiteSpace(c.ExcelColumn) &&
+                    (string.IsNullOrWhiteSpace(c.SqlColumn) || !HeaderIgnoreSqlColumns.Contains(c.SqlColumn)))
+                .ToList();
+
+            // If there’s nothing to detect, default to first row
+            if (!expectedCols.Any())
+                return 1;
+
             List<string> allFoundHeaders = new List<string>();
             Dictionary<int, List<string>> rowHeaders = new Dictionary<int, List<string>>();
 
@@ -319,9 +349,12 @@ public class ExcelFileReader : IFileReader
             for (int i = 1; i <= scanLimit; i++)
             {
                 var row = worksheet.Row(i);
-                var cellValues = row.Cells().Select(c => c.GetString().Trim())
-                                            .Where(v => !string.IsNullOrWhiteSpace(v))
-                                            .ToList();
+
+                // CellsUsed() avoids scanning tons of empty cells
+                var cellValues = row.CellsUsed()
+                    .Select(c => c.GetString().Trim())
+                    .Where(v => !string.IsNullOrWhiteSpace(v))
+                    .ToList();
 
                 rowHeaders[i] = cellValues;
                 allFoundHeaders.AddRange(cellValues);
@@ -334,8 +367,9 @@ public class ExcelFileReader : IFileReader
             for (int i = 1; i <= scanLimit; i++)
             {
                 var cellValues = rowHeaders[i];
-                int matches = mapping.Columns
-                    .Count(col => cellValues.Contains(col.ExcelColumn, StringComparer.OrdinalIgnoreCase));
+
+                int matches = expectedCols.Count(col =>
+                    cellValues.Contains(col.ExcelColumn, StringComparer.OrdinalIgnoreCase));
 
                 if (matches > bestMatchCount)
                 {
@@ -344,46 +378,43 @@ public class ExcelFileReader : IFileReader
                 }
             }
 
-            // Check if we found a reasonable match (at least 70% of columns)
-            if (bestMatchCount >= mapping.Columns.Count * 0.7)
-            {
-                return bestMatchRow;
-            }
+            // Require at least 70% of EXPECTED headers (ignoring ImportedFileID)
+            int threshold = (int)Math.Ceiling(expectedCols.Count * 0.7);
 
-            // If no single row has enough matches, try combining consecutive rows
-            // This handles cases where headers span multiple rows
+            if (bestMatchCount >= threshold)
+                return bestMatchRow;
+
+            // If no single row has enough matches, try combining consecutive rows (up to 3 rows)
             for (int startRow = 1; startRow <= scanLimit - 1; startRow++)
             {
                 var combinedHeaders = new List<string>();
+
                 for (int i = startRow; i <= Math.Min(startRow + 2, scanLimit); i++)
-                {
                     combinedHeaders.AddRange(rowHeaders[i]);
-                }
 
-                int combinedMatches = mapping.Columns
-                    .Count(col => combinedHeaders.Contains(col.ExcelColumn, StringComparer.OrdinalIgnoreCase));
+                int combinedMatches = expectedCols.Count(col =>
+                    combinedHeaders.Contains(col.ExcelColumn, StringComparer.OrdinalIgnoreCase));
 
-                if (combinedMatches >= mapping.Columns.Count * 0.7)
-                {
-                    return startRow; // Return the starting row of the header block
-                }
+                if (combinedMatches >= threshold)
+                    return startRow; // starting row of header block
             }
 
-            // Identify missing fields
-            var missingFields = mapping.Columns
+            // Identify missing fields (only from expectedCols)
+            var missingFields = expectedCols
                 .Where(col => !allFoundHeaders.Contains(col.ExcelColumn, StringComparer.OrdinalIgnoreCase))
                 .Select(col => col.ExcelColumn)
                 .ToList();
 
-            var foundFields = mapping.Columns
+            var foundFields = expectedCols
                 .Where(col => allFoundHeaders.Contains(col.ExcelColumn, StringComparer.OrdinalIgnoreCase))
                 .Select(col => col.ExcelColumn)
                 .ToList();
 
-            var errorMessage = $"Wrong Template uploaded - Template Headings not found in the top {scanLimit} rows. " +
-                             $"Missing Fields:\n{string.Join("\n", missingFields.Select(f => $"• {f}"))}" +
-                              $"\nAvailable fields: [{string.Join(", ", foundFields)}]\n" +
-                              $"\nPlease ensure the Excel file has the correct column headers.";
+            var errorMessage =
+                $"Wrong Template uploaded - Template Headings not found in the top {scanLimit} rows. " +
+                $"Missing Fields:\n{string.Join("\n", missingFields.Select(f => $"• {f}"))}" +
+                $"\nAvailable fields: [{string.Join(", ", foundFields)}]\n" +
+                $"\nPlease ensure the Excel file has the correct column headers.";
 
             ImportLog.Add(new FileLog
             {
@@ -391,11 +422,13 @@ public class ExcelFileReader : IFileReader
                 LogType = "Error",
                 LogMessage = errorMessage
             });
+
             throw new InvalidDataException($"No valid header row found. {errorMessage}");
         }
         catch (Exception ex)
         {
             var errorMessage = $"Exception during header row detection: {ex.Message}";
+
             ImportLog.Add(new FileLog
             {
                 ImportFileId = _ImportFileId,
@@ -404,11 +437,9 @@ public class ExcelFileReader : IFileReader
             });
 
             throw new InvalidDataException($"Header detection failed: {ex.Message}", ex);
-
         }
-
-       
     }
+
 
     public static object GetCellValue(string? cellValue, string expectedType, int rowNum = -1, string columnName = null)
     {

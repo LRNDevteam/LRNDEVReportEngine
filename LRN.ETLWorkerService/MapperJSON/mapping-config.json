@@ -169,6 +169,11 @@
       "FileIdentifier": "Result_Report_by_Received_Date_",
       "JsonMappingPath": "ResultByReceivedDate.json",
       "FileType": 1813
+    },
+    {
+      "FileIdentifier": "Denail Code Mapper",
+      "JsonMappingPath": "LRNDenailCodeMapper.json",
+      "FileType": 99901
     }
   ]
 }

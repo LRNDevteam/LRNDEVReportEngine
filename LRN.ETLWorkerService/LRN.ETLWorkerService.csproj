@@ -26,6 +26,7 @@
     <Content Remove="MapperJSON\InHealthLIS_mapping.json" />
     <Content Remove="MapperJSON\InsuranceAgingbyDateofService.json" />
     <Content Remove="MapperJSON\LISFile.json" />
+    <Content Remove="MapperJSON\LRNDenailCodeMapper.json" />
     <Content Remove="MapperJSON\mapping-config.json" />
     <Content Remove="MapperJSON\Nexus_Preprocessing_IHDTR.json" />
     <Content Remove="MapperJSON\Nexus_Scrupping_IHDTR.json" />
@@ -53,6 +54,7 @@
     <None Include="MapperJSON\ClientBillingSheet.json" />
     <None Include="MapperJSON\CoveCommitDenialReport.json" />
     <None Include="MapperJSON\CoveCommitTransactionReport.json" />
+    <None Include="MapperJSON\LRNDenailCodeMapper.json" />
     <None Include="MapperJSON\COVE_LIS.json" />
     <None Include="MapperJSON\Custom_Collection.json" />
     <None Include="MapperJSON\DenailCodeMapper.json" />

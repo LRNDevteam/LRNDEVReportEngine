@@ -100,6 +100,10 @@ public class ImportFilesRepository : IImportFilesRepository
 		[(int)CommonConst.ImportFileType.Nexum_Preprocessing_DTR] = "Sp_ProcessNexusClaimDTRIH",
 		[(int)CommonConst.ImportFileType.Nexum_Preprocessing_IH] = "Sp_ProcessNexusClaimDTRIH",
 		#endregion
+
+		#region LRN MASTER FILES
+		[(int)CommonConst.ImportFileType.Denial_Code_Mapper] = "sp_ProcessDenailCodeMapper",
+		#endregion
 	};
 
 	public async Task ProcessImportFilesAsync(ImportFileDto file)
@@ -121,7 +125,8 @@ public class ImportFilesRepository : IImportFilesRepository
 		try
 		{
 			int commandTimeout = 2500;
-			await connection.ExecuteAsync("sp_InsertMasterData", transaction: transaction, commandType: CommandType.StoredProcedure, commandTimeout: commandTimeout);
+			if (file.FileType != (int)CommonConst.ImportFileType.Denial_Code_Mapper)
+				await connection.ExecuteAsync("sp_InsertMasterData", transaction: transaction, commandType: CommandType.StoredProcedure, commandTimeout: commandTimeout);
 
 			if (file != null)
 			{

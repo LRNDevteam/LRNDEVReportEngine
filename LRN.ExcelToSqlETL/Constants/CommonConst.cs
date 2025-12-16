@@ -173,6 +173,14 @@ namespace LRN.ExcelToSqlETL.Core.Constants
 
 			#endregion
 
+
+			#region LRN MASTER FILE TYPES
+
+			[Description("Denial_Code_Mapper")]
+			Denial_Code_Mapper = 99901,
+
+			#endregion
+
 		}
 
 		public enum DownloadReportType

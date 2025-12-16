@@ -24,11 +24,13 @@
                class="nav-link @(currentAction == "Index" && currentController == "Upload" ? "active" : "")">
                 Upload
             </a>
-
-            <a href="@Url.Action("DownloadReport", "Upload")"
-               class="nav-link @(currentAction == "DownloadReport" && currentController == "Upload" ? "active" : "")">
-                Reports
-            </a>
+            @if (ViewBag.LabName != "LRN Master")
+            {
+                <a href="@Url.Action("DownloadReport", "Upload")"
+                   class="nav-link @(currentAction == "DownloadReport" && currentController == "Upload" ? "active" : "")">
+                    Reports
+                </a>
+            }
         </div>
 
         <!-- Center Section -->
