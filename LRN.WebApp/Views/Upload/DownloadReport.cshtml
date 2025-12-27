@@ -85,7 +85,11 @@
                 {
                     <tr>
                         <td>@item.ReportName</td>
-                        <td>@item.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")</td>
+                        <td>
+                            <span class="js-local-dt"
+                                  data-utc="@(item.CreatedOn.ToUniversalTime().ToString("O"))"></span>
+                        </td>
+
                         <td class="text-center">
                             @if (item.ReportStatus == 3)
                             {

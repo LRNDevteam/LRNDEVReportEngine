@@ -641,19 +641,19 @@
     {
       "ExcelColumn": "Entry_DateCreated",
       "SqlColumn": "EntryDatecreated",
-      "DataType": "string",
+      "DataType": "date",
       "Required": false
     },
     {
       "ExcelColumn": "Entry_DateSubmitted",
       "SqlColumn": "EntryDatesubmitted",
-      "DataType": "string",
+      "DataType": "date",
       "Required": false
     },
     {
       "ExcelColumn": "Entry_DateUpdated",
       "SqlColumn": "EntryDateupdated",
-      "DataType": "string",
+      "DataType": "date",
       "Required": false
     },
     {

@@ -72,7 +72,7 @@
     },
     {
       "FileIdentifier": "Visit Against Accession",
-      "JsonMappingPath": "VisitAgainstAccession.json",
+      "JsonMappingPath": "VisitAgainstAccession_InHealth.json",
       "FileType": 204
     },
     {

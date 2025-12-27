@@ -1,0 +1,24 @@
+{
+  "SheetName": "",
+  "TargetTable": "dbo.VisitAgaistAccessionStaging",
+  "Columns": [
+    {
+      "ExcelColumn": "Visit Number",
+      "SqlColumn": "VisitNumber",
+      "DataType": "string",
+      "Required": false
+    },
+    {
+      "ExcelColumn": "Reference ID",
+      "SqlColumn": "AccessionNo",
+      "DataType": "string",
+      "Required": false
+    },
+    {
+      "ExcelColumn": "ImportedFileID",
+      "SqlColumn": "ImportedFileID",
+      "DataType": "int",
+      "Required": false
+    }
+  ]
+}

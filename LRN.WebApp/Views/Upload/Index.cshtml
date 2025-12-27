@@ -149,7 +149,13 @@
                     </td>
                         @* <td>Prism</td> *@
                         <td>@item.FileTypeName</td>
-                        <td>@item.ImportedOn?.ToString("dd-MMM-yyyy hh:mm tt")</td>
+                       
+                     <td>
+                        <span class="js-local-dt"
+                              data-utc="@(item.ImportedOn?.ToUniversalTime().ToString("O"))"></span>
+                    </td>
+
+
                         <td>@item.ExcelRowCount</td>
                         <td>@item.ImportedRowCount</td>
                         <td> <span class="@item.FileStatusName.ToLower()">@item.FileStatusName</span></td>

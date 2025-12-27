@@ -119,7 +119,7 @@ public class UploadController : Controller
 					FileType = int.Parse(fileType),
 					FileStatus = (int)CommonConst.FileStatusEnum.ImportQueued,
 					ImportFilePath = filePath,
-					ImportedOn = DateTime.Now,
+					ImportedOn = DateTime.UtcNow,
 					LabId = (int)(labId)
 				};
 
@@ -308,7 +308,7 @@ public class UploadController : Controller
 			var reportDownloadSts = new ReportDownloadSts
 			{
 				ReportStatus = (int)CommonConst.FileStatusEnum.ImportQueued,
-				CreatedOn = DateTime.Now,
+				CreatedOn = DateTime.UtcNow,
 				ReportName = selectedReport?.Text ?? "Unknown Report",
 				ReportType = int.Parse(reportType)
 			};

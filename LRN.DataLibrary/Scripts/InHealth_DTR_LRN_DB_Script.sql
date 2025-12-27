@@ -1,4 +1,4 @@
-﻿USE [InHealthLRN]
+﻿USE [InHealthDTRLRN]
 GO
 /****** Object:  StoredProcedure [dbo].[SP_UpdatePanelDetail_Billing]******/
 DROP PROCEDURE [dbo].[SP_UpdatePanelDetail_Billing]
@@ -89,275 +89,275 @@ DROP PROCEDURE [dbo].[BillingMasterProcess_Proc]
 GO
 ALTER TABLE [dbo].[BillingMaster] DROP CONSTRAINT [CK_BillingMaster_NonNegativeAmounts]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__530F007D]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__79B497A9]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__521ADC44]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__78C07370]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__5126B80B]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__77CC4F37]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__503293D2]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__76D82AFE]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__4F3E6F99]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__75E406C5]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__4E4A4B60]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__74EFE28C]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__4D562727]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__73FBBE53]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__4C6202EE]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__73079A1A]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__4B6DDEB5]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__721375E1]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__4A79BA7C]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__711F51A8]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__49859643]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__702B2D6F]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__4891720A]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__6F370936]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__479D4DD1]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__6E42E4FD]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__46A92998]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__6D4EC0C4]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__45B5055F]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__TestT__6C5A9C8B]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__44C0E126]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__6B667852]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__43CCBCED]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__6A725419]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__42D898B4]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__697E2FE0]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__41E4747B]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__688A0BA7]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__40F05042]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__6795E76E]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__3FFC2C09]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__66A1C335]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__3F0807D0]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__65AD9EFC]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__3E13E397]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__64B97AC3]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__3D1FBF5E]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__63C5568A]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__3C2B9B25]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__62D13251]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__3B3776EC]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__61DD0E18]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__3A4352B3]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__60E8E9DF]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__394F2E7A]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__5FF4C5A6]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__385B0A41]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__5F00A16D]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__3766E608]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Sampl__5E0C7D34]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__3672C1CF]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__5D1858FB]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__357E9D96]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__5C2434C2]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__348A795D]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__5B301089]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__33965524]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__5A3BEC50]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__32A230EB]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__5947C817]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__31AE0CB2]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__5853A3DE]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__30B9E879]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__575F7FA5]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__2FC5C440]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__566B5B6C]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__2ED1A007]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__55773733]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__2DDD7BCE]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__548312FA]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__2CE95795]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__538EEEC1]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__2BF5335C]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__529ACA88]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__2B010F23]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__51A6A64F]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__2A0CEAEA]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__50B28216]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__2918C6B1]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Refer__4FBE5DDD]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__2824A278]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__4ECA39A4]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__27307E3F]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__4DD6156B]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__263C5A06]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__4CE1F132]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__254835CD]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__4BEDCCF9]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__24541194]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__4AF9A8C0]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__235FED5B]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__4A058487]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__226BC922]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__4911604E]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__2177A4E9]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__481D3C15]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__208380B0]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__472917DC]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__1F8F5C77]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__4634F3A3]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__1E9B383E]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__4540CF6A]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__1DA71405]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__444CAB31]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__1CB2EFCC]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__435886F8]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__1BBECB93]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__426462BF]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__1ACAA75A]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Payer__41703E86]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__19D68321]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__407C1A4D]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__18E25EE8]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__3F87F614]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__17EE3AAF]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__3E93D1DB]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__16FA1676]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__3D9FADA2]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__1605F23D]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__3CAB8969]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__1511CE04]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__3BB76530]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__141DA9CB]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__3AC340F7]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__13298592]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__39CF1CBE]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__12356159]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__38DAF885]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__11413D20]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__37E6D44C]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__104D18E7]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__36F2B013]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__0F58F4AE]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__35FE8BDA]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__0E64D075]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__350A67A1]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__0D70AC3C]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__34164368]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__0C7C8803]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Panel__33221F2F]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__7F228CE5]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__322DFAF6]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__7E2E68AC]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__3139D6BD]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__0B8863CA]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__3045B284]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__0A943F91]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__2F518E4B]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__09A01B58]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__2E5D6A12]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__08ABF71F]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__2D6945D9]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__07B7D2E6]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__2C7521A0]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__06C3AEAD]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__2B80FD67]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__05CF8A74]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__2A8CD92E]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__04DB663B]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__2998B4F5]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__03E74202]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__28A490BC]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__02F31DC9]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__27B06C83]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__01FEF990]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__26BC484A]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__010AD557]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__25C82411]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__0016B11E]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Opera__24D3FFD8]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__7D3A4473]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__23DFDB9F]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__7C46203A]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__22EBB766]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__7B51FC01]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__21F7932D]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__7A5DD7C8]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__21036EF4]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__7969B38F]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__200F4ABB]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__78758F56]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__1F1B2682]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__77816B1D]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__1E270249]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__768D46E4]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__1D32DE10]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__759922AB]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__1C3EB9D7]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__74A4FE72]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__1B4A959E]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__73B0DA39]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__1A567165]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__72BCB600]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__19624D2C]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__71C891C7]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__186E28F3]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__70D46D8E]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__177A04BA]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__6FE04955]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__LabId__1685E081]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__6EEC251C]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__1591BC48]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__6DF800E3]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__149D980F]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__6D03DCAA]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__13A973D6]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__6C0FB871]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__12B54F9D]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__6B1B9438]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__11C12B64]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__6A276FFF]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__10CD072B]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__69334BC6]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__0FD8E2F2]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__683F278D]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__0EE4BEB9]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__674B0354]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__0DF09A80]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__6656DF1B]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__0CFC7647]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__6562BAE2]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__0C08520E]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__646E96A9]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__0B142DD5]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__637A7270]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__0A20099C]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__62864E37]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__092BE563]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__619229FE]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Clini__0837C12A]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__609E05C5]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__7FA27B29]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__5FA9E18C]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__7EAE56F0]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__5EB5BD53]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__7DBA32B7]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__5DC1991A]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__7CC60E7E]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__5CCD74E1]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__7BD1EA45]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__5BD950A8]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__7ADDC60C]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__5AE52C6F]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__79E9A1D3]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__59F10836]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__07439CF1]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__58FCE3FD]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__064F78B8]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__5808BFC4]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__055B547F]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__57149B8B]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__04673046]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__56207752]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__03730C0D]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__552C5319]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__027EE7D4]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__54382EE0]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__018AC39B]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__53440AA7]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [FK__LISMaster__Billi__00969F62]
 GO
 ALTER TABLE [dbo].[BillingMaster] DROP CONSTRAINT [FK_BillingMaster_PrimaryPayer]
 GO
@@ -425,9 +425,9 @@ ALTER TABLE [dbo].[NexusStaging] DROP CONSTRAINT [DF__NexusStag__Impor__2FFACE6A
 GO
 ALTER TABLE [dbo].[LISStaging] DROP CONSTRAINT [DF__LISStagin__Impor__6A90B8FC]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [DF__LISMaster__Updat__524FE66E]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [DF__LISMaster__Updat__761910EF]
 GO
-ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [DF__LISMaster__Creat__515BC235]
+ALTER TABLE [dbo].[LISMaster] DROP CONSTRAINT [DF__LISMaster__Creat__7524ECB6]
 GO
 ALTER TABLE [dbo].[LabMaster] DROP CONSTRAINT [DF__LabMaster__Creat__1466F737]
 GO
@@ -449,17 +449,17 @@ ALTER TABLE [dbo].[ICDCodeMaster] DROP CONSTRAINT [DF__ICDCodeMa__Creat__0CC5D56
 GO
 ALTER TABLE [dbo].[ICDCodeMaster] DROP CONSTRAINT [DF__ICDCodeMa__IsAct__0BD1B136]
 GO
-ALTER TABLE [dbo].[DownloadReportTypes] DROP CONSTRAINT [DF__DownloadR__IsAct__60FDF878]
+ALTER TABLE [dbo].[DownloadReportTypes] DROP CONSTRAINT [DF__DownloadR__IsAct__36D2B482]
 GO
 ALTER TABLE [dbo].[DiagnoseLISStaging] DROP CONSTRAINT [DF__DiagnoseL__Impor__09E968C4]
 GO
 ALTER TABLE [dbo].[DenialTrackingStaging] DROP CONSTRAINT [DF__DenialTra__Impor__08F5448B]
 GO
-ALTER TABLE [dbo].[DenialTrackingMaster] DROP CONSTRAINT [DF__DenialTra__Updat__45DF2291]
+ALTER TABLE [dbo].[DenialTrackingMaster] DROP CONSTRAINT [DF__DenialTra__Updat__7430C87D]
 GO
-ALTER TABLE [dbo].[DenialTrackingMaster] DROP CONSTRAINT [DF__DenialTra__Creat__44EAFE58]
+ALTER TABLE [dbo].[DenialTrackingMaster] DROP CONSTRAINT [DF__DenialTra__Creat__733CA444]
 GO
-ALTER TABLE [dbo].[DenialMasterTable] DROP CONSTRAINT [DF__DenialMas__Creat__3AD84F90]
+ALTER TABLE [dbo].[DenialMasterTable] DROP CONSTRAINT [DF__DenialMas__Creat__7248800B]
 GO
 ALTER TABLE [dbo].[CustomCollectionStaging] DROP CONSTRAINT [DF__CustomCol__Impot__0618D7E0]
 GO
@@ -479,25 +479,25 @@ ALTER TABLE [dbo].[ClientBillingSheet] DROP CONSTRAINT [DF__ClientBil__Impor__01
 GO
 ALTER TABLE [dbo].[ClaimsProdStatus] DROP CONSTRAINT [DF__ClaimsPro__Creat__005FFE8A]
 GO
-ALTER TABLE [dbo].[ClaimsLevelStatus] DROP CONSTRAINT [DF__ClaimsLev__Creat__7F6BDA51]
+ALTER TABLE [dbo].[ClaimsLevelStatus] DROP CONSTRAINT [DF__ClaimsLev__Creat__71545BD2]
 GO
-ALTER TABLE [dbo].[ClaimsLevelStatus] DROP CONSTRAINT [DF__ClaimsLev__Total__7E77B618]
+ALTER TABLE [dbo].[ClaimsLevelStatus] DROP CONSTRAINT [DF__ClaimsLev__Total__70603799]
 GO
-ALTER TABLE [dbo].[ClaimsLevelStatus] DROP CONSTRAINT [DF__ClaimsLev__Patie__7D8391DF]
+ALTER TABLE [dbo].[ClaimsLevelStatus] DROP CONSTRAINT [DF__ClaimsLev__Patie__6F6C1360]
 GO
-ALTER TABLE [dbo].[ClaimsLevelStatus] DROP CONSTRAINT [DF__ClaimsLev__Insur__7C8F6DA6]
+ALTER TABLE [dbo].[ClaimsLevelStatus] DROP CONSTRAINT [DF__ClaimsLev__Insur__6E77EF27]
 GO
-ALTER TABLE [dbo].[ClaimsLevelStatus] DROP CONSTRAINT [DF__ClaimsLev__Patie__7B9B496D]
+ALTER TABLE [dbo].[ClaimsLevelStatus] DROP CONSTRAINT [DF__ClaimsLev__Patie__6D83CAEE]
 GO
-ALTER TABLE [dbo].[ClaimsLevelStatus] DROP CONSTRAINT [DF__ClaimsLev__Patie__7AA72534]
+ALTER TABLE [dbo].[ClaimsLevelStatus] DROP CONSTRAINT [DF__ClaimsLev__Patie__6C8FA6B5]
 GO
-ALTER TABLE [dbo].[ClaimsLevelStatus] DROP CONSTRAINT [DF__ClaimsLev__Insur__79B300FB]
+ALTER TABLE [dbo].[ClaimsLevelStatus] DROP CONSTRAINT [DF__ClaimsLev__Insur__6B9B827C]
 GO
-ALTER TABLE [dbo].[ClaimsLevelStatus] DROP CONSTRAINT [DF__ClaimsLev__Insur__78BEDCC2]
+ALTER TABLE [dbo].[ClaimsLevelStatus] DROP CONSTRAINT [DF__ClaimsLev__Insur__6AA75E43]
 GO
-ALTER TABLE [dbo].[ClaimsLevelStatus] DROP CONSTRAINT [DF__ClaimsLev__Allow__77CAB889]
+ALTER TABLE [dbo].[ClaimsLevelStatus] DROP CONSTRAINT [DF__ClaimsLev__Allow__69B33A0A]
 GO
-ALTER TABLE [dbo].[ClaimsLevelStatus] DROP CONSTRAINT [DF__ClaimsLev__Bille__76D69450]
+ALTER TABLE [dbo].[ClaimsLevelStatus] DROP CONSTRAINT [DF__ClaimsLev__Bille__68BF15D1]
 GO
 ALTER TABLE [dbo].[ClaimBillingDetails] DROP CONSTRAINT [DF__ClaimBill__Creat__75E27017]
 GO
@@ -724,6 +724,9 @@ DROP FUNCTION [dbo].[GetOrignaltDenailCodeByVisitNumber]
 GO
 /****** Object:  UserDefinedFunction [dbo].[GetOriginalDenailCodeByVisitCPT]******/
 DROP FUNCTION [dbo].[GetOriginalDenailCodeByVisitCPT]
+GO
+/****** Object:  UserDefinedFunction [dbo].[GetDenialDescription]******/
+DROP FUNCTION [dbo].[GetDenialDescription]
 GO
 /****** Object:  UserDefinedFunction [dbo].[GetDenialCodeDescByVisitCPT]******/
 DROP FUNCTION [dbo].[GetDenialCodeDescByVisitCPT]
@@ -1199,7 +1202,10 @@ BEGIN
         SELECT Code, MAX(PaymentDate) AS PaymentDate
         FROM Tokenized
         WHERE Code NOT IN ('CO45','CO253','CO1','CO2','CO3','PR1','PR2','PR3','PR45','PR253','PI45','PI1','PI2','PI3',
-							'PI253','CO 45','CO 253','CO 1','CO 2','CO 3','PR 1','PR 2','PR 3','PR 45','PR 253','PI 253','PI 45','PI 1','PI 2','PI 3')
+							'PI253','CO 45','CO 253','CO 1','CO 2','CO 3','PR 1','PR 2','PR 3','PR 45','PR 253','PI 253','PI 45','PI 1','PI 2','PI 3',
+							'CO045','CO0253','CO01','CO02','CO03',
+							'PR01','PR02','PR03','PR045','PR0253',
+							'PI045','PI01','PI02','PI03','PI0253')
         GROUP BY Code
     )
     SELECT @Result = STRING_AGG(Code, ';') WITHIN GROUP (ORDER BY Code)
@@ -1253,7 +1259,10 @@ BEGIN
         SELECT Code, MAX(PaymentDate) AS PaymentDate
         FROM Tokenized
             WHERE Code NOT IN ('CO45','CO253','CO1','CO2','CO3','PR1','PR2','PR3','PR45','PR253','PI45','PI1','PI2','PI3',
-							'PI253','CO 45','CO 253','CO 1','CO 2','CO 3','PR 1','PR 2','PR 3','PR 45','PR 253','PI 253','PI 45','PI 1','PI 2','PI 3')
+							'PI253','CO 45','CO 253','CO 1','CO 2','CO 3','PR 1','PR 2','PR 3','PR 45','PR 253','PI 253','PI 45','PI 1','PI 2','PI 3',
+							'CO045','CO0253','CO01','CO02','CO03',
+							'PR01','PR02','PR03','PR045','PR0253',
+							'PI045','PI01','PI02','PI03','PI0253')
         GROUP BY Code
     )
     SELECT @Result = STRING_AGG(Code, ';') WITHIN GROUP (ORDER BY Code)
@@ -1267,8 +1276,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE  FUNCTION [dbo].[GetDenialCodeDescByVisit]
+CREATE   FUNCTION [dbo].[GetDenialCodeDescByVisit]
 (
     @visitno VARCHAR(100)
 )
@@ -1277,88 +1285,55 @@ AS
 BEGIN
     DECLARE @Result NVARCHAR(MAX);
 
-    ;WITH CTE_DenailMaster AS
-    (
-        SELECT
-            VisitNumber,
-            CPTCodes,
-            PaymentDate = ISNULL(PaymentDate, TRY_CONVERT(date, PaymentDate)),
-            -- Aggregate descriptions per Visit + CPT + PaymentDate
-            DenialDescriptionAgg =
-                STRING_AGG(CAST(DenialDescription AS NVARCHAR(MAX)), ';')
-        FROM dbo.DenialTrackingMaster
-        WHERE VisitNumber       = @visitno
-          AND DenialDescription IS NOT NULL
-        GROUP BY VisitNumber,
-                 CPTCodes,
-                 ISNULL(PaymentDate, TRY_CONVERT(date, PaymentDate))
-    ),
-    CTE_Denial AS
-    (
-        SELECT
-            VisitNumber,
-            CPTCodes,
-            PaymentDate,
-            DenialDescriptionAgg,
-            ROW_NUMBER() OVER
-            (
-                PARTITION BY VisitNumber, CPTCodes
-                ORDER BY PaymentDate DESC
-            ) AS RowNumByLatestPayment
-        FROM CTE_DenailMaster
-    ),
-
-    -- Use only the latest PaymentDate per Visit + CPT
-    LatestRows AS
-    (
-        SELECT *
-        FROM CTE_Denial
-        WHERE RowNumByLatestPayment = 1
-    ),
-
-    -- Parse each "CODE: description" segment from DenialDescriptionAgg
-    Parsed AS
-    (
-        SELECT DISTINCT
-            Segment  = v.CleanValue,                             -- full "CO129: ...", "CO143: ...", etc.
-            CodeRaw  = LEFT(v.CleanValue, ca.ColonPos - 1),      -- "CO129"
-            CodeNorm = REPLACE(LEFT(v.CleanValue, ca.ColonPos - 1), ' ', '')  -- "CO129", "CO143", etc.
-        FROM LatestRows d
-        CROSS APPLY STRING_SPLIT(d.DenialDescriptionAgg, ';') s
-        CROSS APPLY (SELECT LTRIM(RTRIM(s.value)) AS CleanValue) v
-        CROSS APPLY (
-            -- Always find a colon by appending ':' so CHARINDEX >= 1
-            SELECT CHARINDEX(':', v.CleanValue + ':') AS ColonPos
-        ) ca
-        WHERE v.CleanValue <> ''
-          AND ca.ColonPos > 1   -- ensure at least 1 char before ':'
-    ),
-
-    -- Apply the same omit list as in GetDenailCodeByVisitNumber, keep distinct segments
-    Filtered AS
-    (
-        SELECT DISTINCT
-            CodeNorm,
-            Segment
-        FROM Parsed
-        WHERE CodeNorm NOT IN (
-              'CO45','CO253','CO1','CO2','CO3',
-              'PR1','PR2','PR3','PR45','PR253',
-              'PI45','PI1','PI2','PI3','PI253',
-              'CO 45','CO 253','CO 1','CO 2','CO 3',
-              'PR 1','PR 2','PR 3','PR 45','PR 253',
-              'PI 253','PI 45','PI 1','PI 2','PI 3'
-        )
-    )
-
-    -- Final agg: distinct "Code:Description" segments, ; separated
-    SELECT @Result =
-        STRING_AGG(
-            CAST(Segment AS NVARCHAR(MAX)),    -- LOB type avoids 8000-byte limit
-            '; '
-        ) WITHIN GROUP (ORDER BY CodeNorm)
-    FROM Filtered;
-
+		;WITH SplitDenials AS
+		(
+			SELECT
+				cls.VisitNumber,
+				d.DenialCode,
+				d.DenialDescription,
+				-- Normalize description so CO171 / PR171 collapse into same bucket
+				DenialDescriptionKey =
+					LOWER(
+						CASE
+							WHEN RIGHT(RTRIM(d.DenialDescription), 1) = '.'
+								 THEN LEFT(RTRIM(d.DenialDescription),
+										   LEN(RTRIM(d.DenialDescription)) - 1)
+							ELSE RTRIM(d.DenialDescription)
+						END
+					)
+			FROM ClaimsLevelStatus cls
+			CROSS APPLY STRING_SPLIT(cls.DenailCode, ';') s
+			INNER JOIN DenialMasterTable d
+				ON d.DenialCode = LTRIM(RTRIM(s.value))
+				Where VisitNumber = @visitno
+		),
+		CodesPerDescription AS
+		(
+			SELECT
+				VisitNumber,
+				DenialDescriptionKey,
+				-- pick one “real” description to display (e.g. MIN)
+				DisplayDescription = MIN(DenialDescription),
+				Codes = STRING_AGG(DenialCode, ' , ')
+						WITHIN GROUP (ORDER BY DenialCode)
+			FROM SplitDenials
+			GROUP BY VisitNumber, DenialDescriptionKey
+		),
+		Chunks AS
+		(
+			SELECT
+				VisitNumber,
+				Chunk = CONCAT(Codes, ' - ', DisplayDescription)
+			FROM CodesPerDescription
+		)
+		SELECT
+			@Result =
+				STRING_AGG(Chunk, ' , ')
+				WITHIN GROUP (ORDER BY Chunk)
+				--INTO #DenialDesc
+		FROM Chunks
+		GROUP BY VisitNumber;
+   
     RETURN @Result;
 END
 GO
@@ -1367,8 +1342,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE   FUNCTION [dbo].[GetDenialCodeDescByVisitCPT]
+CREATE  FUNCTION [dbo].[GetDenialCodeDescByVisitCPT]
 (
     @visitno VARCHAR(100),
 	@CPTCode VARCHAR(50)
@@ -1378,90 +1352,107 @@ AS
 BEGIN
     DECLARE @Result NVARCHAR(MAX);
 
-    ;WITH CTE_DenailMaster AS
-    (
-        SELECT
-            VisitNumber,
-            CPTCodes,
-            PaymentDate = ISNULL(PaymentDate, TRY_CONVERT(date, PaymentDate)),
-            -- Aggregate descriptions per Visit + CPT + PaymentDate
-            DenialDescriptionAgg =
-                STRING_AGG(CAST(DenialDescription AS NVARCHAR(MAX)), ';')
-        FROM dbo.DenialTrackingMaster
-        WHERE VisitNumber       = @visitno and CPTCodes = @CPTCode
-          AND DenialDescription IS NOT NULL
-        GROUP BY VisitNumber,
-                 CPTCodes,
-                 ISNULL(PaymentDate, TRY_CONVERT(date, PaymentDate))
-    ),
-    CTE_Denial AS
-    (
-        SELECT
-            VisitNumber,
-            CPTCodes,
-            PaymentDate,
-            DenialDescriptionAgg,
-            ROW_NUMBER() OVER
-            (
-                PARTITION BY VisitNumber, CPTCodes
-                ORDER BY PaymentDate DESC
-            ) AS RowNumByLatestPayment
-        FROM CTE_DenailMaster
-    ),
-
-    -- Use only the latest PaymentDate per Visit + CPT
-    LatestRows AS
-    (
-        SELECT *
-        FROM CTE_Denial
-        WHERE RowNumByLatestPayment = 1
-    ),
-
-    -- Parse each "CODE: description" segment from DenialDescriptionAgg
-    Parsed AS
-    (
-        SELECT DISTINCT
-            Segment  = v.CleanValue,                             -- full "CO129: ...", "CO143: ...", etc.
-            CodeRaw  = LEFT(v.CleanValue, ca.ColonPos - 1),      -- "CO129"
-            CodeNorm = REPLACE(LEFT(v.CleanValue, ca.ColonPos - 1), ' ', '')  -- "CO129", "CO143", etc.
-        FROM LatestRows d
-        CROSS APPLY STRING_SPLIT(d.DenialDescriptionAgg, ';') s
-        CROSS APPLY (SELECT LTRIM(RTRIM(s.value)) AS CleanValue) v
-        CROSS APPLY (
-            -- Always find a colon by appending ':' so CHARINDEX >= 1
-            SELECT CHARINDEX(':', v.CleanValue + ':') AS ColonPos
-        ) ca
-        WHERE v.CleanValue <> ''
-          AND ca.ColonPos > 1   -- ensure at least 1 char before ':'
-    ),
-
-    -- Apply the same omit list as in GetDenailCodeByVisitNumber, keep distinct segments
-    Filtered AS
-    (
-        SELECT DISTINCT
-            CodeNorm,
-            Segment
-        FROM Parsed
-        WHERE CodeNorm NOT IN (
-              'CO45','CO253','CO1','CO2','CO3',
-              'PR1','PR2','PR3','PR45','PR253',
-              'PI45','PI1','PI2','PI3','PI253',
-              'CO 45','CO 253','CO 1','CO 2','CO 3',
-              'PR 1','PR 2','PR 3','PR 45','PR 253',
-              'PI 253','PI 45','PI 1','PI 2','PI 3'
-        )
-    )
-
-    -- Final agg: distinct "Code:Description" segments, ; separated
-    SELECT @Result =
-        STRING_AGG(
-            CAST(Segment AS NVARCHAR(MAX)),    -- LOB type avoids 8000-byte limit
-            '; '
-        ) WITHIN GROUP (ORDER BY CodeNorm)
-    FROM Filtered;
+   ;WITH ActualCode AS
+   (	SELECT VisitNumber,CPTCode,DenialCode
+			FROM BillingMaster 
+				Where VisitNumber = @visitno AND CPTCode = @CPTCode),
+				SplitDenials AS
+		(
+			SELECT
+				cls.VisitNumber,CPTCode,
+				d.DenialCode,
+				d.DenialDescription,
+				-- Normalize description so CO171 / PR171 collapse into same bucket
+				DenialDescriptionKey =
+					LOWER(
+						CASE
+							WHEN RIGHT(RTRIM(d.DenialDescription), 1) = '.'
+								 THEN LEFT(RTRIM(d.DenialDescription),
+										   LEN(RTRIM(d.DenialDescription)) - 1)
+							ELSE RTRIM(d.DenialDescription)
+						END
+					)
+			FROM ActualCode cls
+			CROSS APPLY STRING_SPLIT(cls.DenialCode, ';') s
+			INNER JOIN DenialMasterTable d
+				ON d.DenialCode = LTRIM(RTRIM(s.value))
+		),
+		CodesPerDescription AS
+		(
+			SELECT
+				VisitNumber,CPTCode,
+				DenialDescriptionKey,
+				-- pick one “real” description to display (e.g. MIN)
+				DisplayDescription = MIN(DenialDescription),
+				Codes = STRING_AGG(DenialCode, ' , ')
+						WITHIN GROUP (ORDER BY DenialCode)
+			FROM SplitDenials
+			GROUP BY VisitNumber, DenialDescriptionKey,CPTCode
+		),
+		Chunks AS
+		(
+			SELECT
+				VisitNumber,CPTCode,
+				Chunk = CONCAT(Codes, ' - ', DisplayDescription)
+			FROM CodesPerDescription
+		)
+		SELECT
+			@Result =
+				STRING_AGG(Chunk, ' , ')
+				WITHIN GROUP (ORDER BY Chunk)
+				--INTO #DenialDesc
+		FROM Chunks
+		GROUP BY VisitNumber,CPTCode;
 
     RETURN @Result;
 END
+GO
+/****** Object:  UserDefinedFunction [dbo].[GetDenialDescription]******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   FUNCTION [dbo].[GetDenialDescription]  
+(  
+    @DenialCodes NVARCHAR(MAX)  
+)  
+RETURNS NVARCHAR(MAX)  
+AS  
+BEGIN  
+    DECLARE @Result NVARCHAR(MAX) = N'';  
+  
+    -- Normalize ; to ,  
+    IF @DenialCodes IS NOT NULL  
+        SET @DenialCodes = REPLACE(@DenialCodes, ';', ',');  
+  
+    IF @DenialCodes IS NULL OR LTRIM(RTRIM(@DenialCodes)) = N''  
+        RETURN @Result;  
+  
+    ;WITH NormalizedCodes AS  
+    (  
+        SELECT DISTINCT  
+            REPLACE(REPLACE(LTRIM(RTRIM(value)), 'PR', 'CO'), 'PI', 'CO') AS Code  
+        FROM STRING_SPLIT(@DenialCodes, ',')  
+        WHERE LTRIM(RTRIM(value)) <> ''  
+    ),  
+    Descs AS  
+    (  
+        SELECT    
+            nc.Code,  
+            CASE   
+                WHEN d.DenialDescription IS NOT NULL   
+                    THEN nc.Code + N' - ' + d.DenialDescription  
+                ELSE nc.Code + N' - Description not found'  
+            END AS FullText  
+        FROM NormalizedCodes nc  
+        LEFT JOIN DenialMasterTable d  
+            ON d.DenialCode = nc.Code  
+    )  
+    SELECT @Result = STRING_AGG(FullText, ', ')   
+    FROM Descs;  
+  
+    RETURN @Result;  
+END;
 GO
 /****** Object:  UserDefinedFunction [dbo].[GetOriginalDenailCodeByVisitCPT]******/
 SET ANSI_NULLS ON
@@ -1749,7 +1740,6 @@ CREATE TABLE [dbo].[BillingMaster](
 	[DenialPostedDate] [date] NULL,
 	[LISPanel] [nvarchar](255) NULL,
 	[DenialDescription] [nvarchar](max) NULL,
-	[OriginalDenailCode] [nvarchar](255) NULL,
  CONSTRAINT [PK_BillingMaster] PRIMARY KEY CLUSTERED 
 (
 	[BillingMasterID] ASC
@@ -2018,16 +2008,12 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[BillingAccessions](
-	[VisitNumber] [int] NOT NULL,
+	[VisitNumber] [int] NULL,
 	[PatientName] [nvarchar](255) NOT NULL,
 	[BeginDOS] [date] NULL,
 	[LastBillDate] [date] NULL,
 	[DOE] [date] NULL,
-	[AccessionNo] [nvarchar](50) NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[VisitNumber] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+	[AccessionNo] [nvarchar](50) NULL
 ) ON [PRIMARY]
 GO
 /****** Object:  Table [dbo].[BillingProviderMaster]******/
@@ -3900,12 +3886,7 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-				DELETE FROM BillingMaster WHERE VisitNumber IN (SELECT DISTINCT VisitNumber FROM #BillingMaster)
-
-				DECLARE @mx bigint;
-				SELECT @mx = ISNULL(MAX(BillingMasterId), 0) FROM dbo.BillingMaster WITH (TABLOCKX);
-				DBCC CHECKIDENT ('dbo.BillingMaster', RESEED, @mx);
-				
+				Truncate table BillingMaster;
      
 	            INSERT into BillingMaster(
                 --LISMasterId,
@@ -4307,19 +4288,20 @@ BEGIN
 		JOIN #TransData DC ON CLS.VisitNumber = DC.VisitNumber 
 
 
-		;WITH GroupedCPT AS (
-        SELECT VisitNumber, CPTCode, SUM(Units) AS Units
-        FROM BillingMaster bm
-        GROUP BY bm.VisitNumber, bm.CPTCode
+		 ;WITH GroupedCPT AS (
+        SELECT VisitNumber, CPTCode, Units,Modifier
+        FROM BillingMaster bm 
 		),
 		AggregatedCPT AS (
 			SELECT VisitNumber,
-				STRING_AGG(CAST(CPTCode AS VARCHAR(20)) + 
-					(CASE WHEN ISNULL(Units,0) = 0 THEN '' ELSE '* ' + CAST(ISNULL(Units,0) AS VARCHAR(10)) END), ', ') AS CPTCode
+				STRING_AGG(CAST(CPTCode AS VARCHAR(20)) + REPLACE((CASE WHEN Modifier IS NULL OR Modifier = '0' THEN '' ELSE ' - '  + Modifier END ),' ','')+
+					(CASE WHEN ISNULL(Units,0) = 0 THEN '' ELSE ' * ' + CAST(ISNULL(Units,0) AS VARCHAR(10)) END), ', ') AS CPTCode
 			FROM GroupedCPT
 			GROUP BY VisitNumber
-		) SELECT * INTO #CPTCodesUnits FROM AggregatedCPT
+		) SELECT * INTO #CPTCodesUnits
+		FROM AggregatedCPT
 
+		CREATE NONCLUSTERED INDEX IX_VisitNumber_DC ON #CPTCodesUnits (VisitNumber);
 
 		UPDATE CLS SET CLS.CPTCodeWithUnits = DC.CPTCode  FROM ClaimsLevelStatus CLS
 		JOIN #CPTCodesUnits DC ON CLS.VisitNumber = DC.VisitNumber 
@@ -4332,7 +4314,7 @@ BEGIN
 
         COMMIT TRAN;
 
-		EXEC SP_UpdatePanelDetail_Billing;
+	
 
     END TRY
     BEGIN CATCH
@@ -4436,8 +4418,9 @@ BEGIN
         b.VisitNumber,
         b.CPTCode,
         b.PatientName,
-		CAST(B.PatientDOB AS DATE) AS  PatientDOB, 
-        PanelCarrier PayerName,
+		--CAST(B.PatientDOB AS DATE) AS  PatientDOB, 
+        CONVERT(VARCHAR, B.PatientDOB, 101) AS  PatientDOB,
+		PanelCarrier PayerName,
         PayerType,
         BillingProvider,
 		CAST(BeginDOS AS DATE) AS   BeginDOS,
@@ -4454,7 +4437,7 @@ BEGIN
 		CAST(PaymentPostedDate AS DATE) AS    PaymentPostedDate,
 		CAST(DenialPostedDate AS DATE) AS     DenialPostedDate,
         b.CheckNumber,
-        b.Modifier,
+        CASE WHEN b.Modifier = '0' then '' else b.Modifier end Modifier,
         DenialCode as DenialCode,
 		OrginalDenialCode AS [Orginal Denial Code],
 		DenialDescription,
@@ -4481,10 +4464,10 @@ BEGIN
 	LEFT JOIN ClinicMaster CM ON l.ClinicId = CM.ClinicId
 
     WHERE 
-        (@FromDate IS NULL OR TRY_CONVERT(date, b.FirstBillDate) >= @FromDate)
-        AND
-        (@ToDate IS NULL OR TRY_CONVERT(date, b.FirstBillDate) <= @ToDate)
-		and LTRIM(RTRIM(b.BillingLab)) NOT IN ('DTR') order by FirstBillDate 
+        --(@FromDate IS NULL OR TRY_CONVERT(date, b.FirstBillDate) >= @FromDate)
+        --AND
+        --(@ToDate IS NULL OR TRY_CONVERT(date, b.FirstBillDate) <= @ToDate)		and
+		LTRIM(RTRIM(b.BillingLab)) NOT IN ('DTR') order by FirstBillDate 
 END
 GO
 /****** Object:  StoredProcedure [dbo].[sp_GetCollectionReport]******/
@@ -4502,8 +4485,8 @@ BEGIN
 	
     SELECT * INTO #BillingMasterTemp 
     FROM BillingMaster WITH (NOLOCK)
-    WHERE (@FromDate IS NULL OR FirstBillDate >= @FromDate) 
-      AND (@ToDate IS NULL OR FirstBillDate <= @ToDate);
+    --WHERE (@FromDate IS NULL OR FirstBillDate >= @FromDate) 
+    --  AND (@ToDate IS NULL OR FirstBillDate <= @ToDate);
 
 
 
@@ -4636,7 +4619,7 @@ BEGIN
 		CASE 
 			WHEN CPS.FinalStatus IN ('No Response','Unbilled','Unbilled - Client','Unbilled - Patient Balance','No Response - Client') THEN NULL
 			WHEN CPS.FinalStatus = 'Fully Adjusted' AND CPS.DenailCode IS NULL THEN NULL
-			ELSE 'Adjudicated Count' END
+			ELSE 'Adjudicated' END
 			 AdjudicatedCount,
 
         CPS.FinalStatus,
@@ -4659,7 +4642,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
-create   Procedure [dbo].[sp_GETDenialClaimLevel]
+CREATE   Procedure [dbo].[sp_GETDenialClaimLevel]
 AS BEGIN 
 
 SELECT VisitNumber,PatientName,PatientDOB,PanelCarrier,PanelName,ReferringProvider,BeginDOS,
@@ -4668,7 +4651,7 @@ CASE WHEN FirstBillDate IS NULL THEN 1 ELSE 0 END,FirstBillDate) AS rn INTO #Bil
 
 
 Select BM.VisitNumber,CBD.AccessionNo,PatientName,PatientDOB,PanelCarrier,ReferringProvider,BeginDOS,ChargeEntryDate,CBD.FirstBillDate,
-CPTCodeWithUnits CPTCode,ICDCodes,DenailCode DenialCode,DenialDescription,DenialPostedDate,BilledAmount,AllowedAmount,InsurancePayment,
+CPTCodeWithUnits CPTCode,ICDCodes,DenailCode DenialCode,OrginalDenailCode,DenialDescription,DenialPostedDate,BilledAmount,AllowedAmount,InsurancePayment,
 PatientPaidAmount,InsuranceAdjustment,PatientAdjustment,InsuranceBalance,PatientBalance,TotalBalance
 From ClaimsLevelStatus CBD 
 JOIN #BillingMaster BM ON CBD.VisitNumber = BM.VisitNumber 
@@ -4683,7 +4666,7 @@ SET QUOTED_IDENTIFIER ON
 GO
   
   
-create   Procedure [dbo].[sp_GetDenialClaimLevelReport]  
+CREATE   Procedure [dbo].[sp_GetDenialClaimLevelReport]  
 AS BEGIN   
   
 SELECT VisitNumber,PatientName,PatientDOB,PanelCarrier,PanelName,ReferringProvider,BeginDOS,  
@@ -4692,7 +4675,7 @@ CASE WHEN FirstBillDate IS NULL THEN 1 ELSE 0 END,FirstBillDate) AS rn INTO #Bil
   
   
 Select BM.VisitNumber,CBD.AccessionNo,PatientName,PatientDOB,PanelCarrier,ReferringProvider,BeginDOS,ChargeEntryDate,CBD.FirstBillDate,  
-CPTCodeWithUnits CPTCode,ICDCodes,DenailCode DenialCode,DenialDescription,DenialPostedDate,BilledAmount,AllowedAmount,InsurancePayment,  
+CPTCodeWithUnits CPTCode,ICDCodes,DenailCode DenialCode,OrginalDenailCode,DenialDescription,DenialPostedDate,BilledAmount,AllowedAmount,InsurancePayment,  
 PatientPaidAmount,InsuranceAdjustment,PatientAdjustment,InsuranceBalance,PatientBalance,TotalBalance  
 From ClaimsLevelStatus CBD   
 JOIN #BillingMaster BM ON CBD.VisitNumber = BM.VisitNumber   
@@ -4856,7 +4839,7 @@ BEGIN
 		CAST(PaymentPostedDate AS DATE) AS    PaymentPostedDate,
 		CAST(DenialPostedDate AS DATE) AS     DenialPostedDate,
         b.CheckNumber,
-        b.Modifier,
+        CASE WHEN b.Modifier = '0' then '' else b.Modifier end Modifier,
         DenialCode as DenialCode,
 		OrginalDenialCode AS [Orginal Denial Code],
 		DenialDescription,
@@ -4883,10 +4866,10 @@ BEGIN
 	LEFT JOIN ClinicMaster CM ON l.ClinicId = CM.ClinicId
 
     WHERE 
-        (@FromDate IS NULL OR TRY_CONVERT(date, b.FirstBillDate) >= @FromDate)
-        AND
-        (@ToDate IS NULL OR TRY_CONVERT(date, b.FirstBillDate) <= @ToDate)
-		and LTRIM(RTRIM(b.BillingLab)) NOT IN ('DTR') order by FirstBillDate 
+        --(@FromDate IS NULL OR TRY_CONVERT(date, b.FirstBillDate) >= @FromDate)
+        --AND
+        --(@ToDate IS NULL OR TRY_CONVERT(date, b.FirstBillDate) <= @ToDate)		and
+		LTRIM(RTRIM(b.BillingLab)) NOT IN ('DTR') order by FirstBillDate 
 END
 GO
 /****** Object:  StoredProcedure [dbo].[sp_GetProductionReportMaster]******/
@@ -4904,8 +4887,8 @@ BEGIN
 	
     SELECT * INTO #BillingMasterTemp 
     FROM BillingMaster WITH (NOLOCK)
-    WHERE (@FromDate IS NULL OR FirstBillDate >= @FromDate) 
-      AND (@ToDate IS NULL OR FirstBillDate <= @ToDate);
+    --WHERE (@FromDate IS NULL OR FirstBillDate >= @FromDate) 
+    --  AND (@ToDate IS NULL OR FirstBillDate <= @ToDate);
 
 
 
@@ -5038,7 +5021,7 @@ BEGIN
 		CASE 
 			WHEN CPS.FinalStatus IN ('No Response','Unbilled','Unbilled - Client','Unbilled - Patient Balance','No Response - Client') THEN NULL
 			WHEN CPS.FinalStatus = 'Fully Adjusted' AND CPS.DenailCode IS NULL THEN NULL
-			ELSE 'Adjudicated Count' END
+			ELSE 'Adjudicated' END
 			 AdjudicatedCount,
 
         CPS.FinalStatus,
@@ -5655,13 +5638,14 @@ BEGIN
         --FROM CTE_VAA 
         --WHERE RowNum = 1;
 
-		DELETE FROM VAAMaster WHERE VisitNumber IN (SELECT DISTINCT VisitNumber FROM VisitAgaistAccessionStaging WHERE  ImportedFileID = @FileId)
+		TRUNCATE TABLE VAAMaster;
 		
 		--DBCC CHECKIDENT ('VAAMaster', RESEED, 0);
 
         -- Insert new records into VAAMaster if not exists
         INSERT INTO VAAMaster (VisitNumber, AccessionNo, DateOfEntry, ServiceDate)
-		SELECT DISTINCT VisitNumber,REPLACE(AccessionNo,'.1',''),EntryDate,ServiceDate FROM VisitAgaistAccessionStaging WHERE  ImportedFileID = @FileId
+		SELECT DISTINCT VisitNumber,REPLACE(AccessionNo,'.1',''),EntryDate,ServiceDate FROM VisitAgaistAccessionStaging
+		WHERE  ImportedFileID = @FileId AND VisitNumber IS NOT NULL;
         --SELECT 
         --    t.VisitNumber,
         --    t.AccessionNo,
@@ -5726,7 +5710,8 @@ AS BEGIN
 
 		INSERT INTO BillingAccessions (VisitNumber,PatientName,BeginDOS,LastBillDate,DOE)
 		Select VisitNumber,PatientName,BeginDOS,MIN(FirstBillDate),MAX(ChargeEntryDate) from BillingMaster 
-		GROUP BY VisitNumber,PatientName,BeginDOS 
+		Where VisitNumber IS NOT NULL
+		GROUP BY VisitNumber,PatientName,BeginDOS
 
 		UPDATE BA SET BA.AccessionNo = REPLACE(VAA.AccessionNo,'.1','') FROM BillingAccessions BA 
 		JOIN VAAMaster VAA ON BA.VisitNumber = VAA.VisitNumber WHERE VAA.AccessionNo NOT LIKE '%[_]%'
@@ -5957,23 +5942,32 @@ BEGIN
 
 
 		 SELECT VisitNumber,CPTCodes,DBO.GetDenailCodeByVisitCPT(VisitNumber,CPTCodes) DenialCode,
-		 DBO.GetOriginalDenailCodeByVisitCPT(VisitNumber,CPTCodes) OriginlDenialCode,MAX(PaymentDate) PaymentDate,
-		 DBO.[GetDenialCodeDescByVisitCPT](VisitNumber,CPTCodes) DenialDescription INTO #DenialDescription FROM DenialTrackingMaster
+		 DBO.GetOriginalDenailCodeByVisitCPT(VisitNumber,CPTCodes) OriginlDenialCode,MAX(PaymentDate) PaymentDate
+		 INTO #DenialDescription FROM DenialTrackingMaster
 		 GROUP BY VisitNumber,CPTCodes,DBO.GetDenailCodeByVisitCPT(VisitNumber,CPTCodes),
 		 DBO.GetOriginalDenailCodeByVisitCPT(VisitNumber,CPTCodes),
 		 DBO.[GetDenialCodeDescByVisitCPT](VisitNumber,CPTCodes);
 
-		 UPDATE BM SET BM.DenialCode = DXC.DenialCode, BM.OriginalDenailCode = DXC.OriginlDenialCode, 
-		 BM.DenialDescription =  REPLACE(REPLACE(DXC.DenialDescription,';',' , '),':',' -')  ,
+		 UPDATE BM SET BM.DenialCode = DXC.DenialCode, BM.OrginalDenialCode = DXC.OriginlDenialCode, 
 		 DenialPostedDate = CASE WHEN DXC.DenialCode IS NOT NULL THEN PaymentDate ELSE NULL END
 		 FROM BillingMaster BM
 		 JOIN #DenialDescription DXC ON BM.VisitNumber = DXC.VisitNumber AND BM.CPTCode = DXC.CPTCodes
 
-		 EXEC sp_InsertClaimDenialCode;
-		 EXEC sp_ClaimLevelStatusUpdate;
-		 EXEC sp_DenailDescrpUpdateByVisitCPT;
+		 SELECT DISTINCT VisitNumber,CPTCode,DenialCode,DBO.GetDenialCodeDescByVisitCPT(VisitNumber,CPTCode) DenialDescription 
+		 INTO #DenialDescrp FROM BillingMaster Where DenialCode IS NOT NULL
+
+		 UPDATE BM SET  BM.DenialDescription =  REPLACE(REPLACE(DXC.DenialDescription,';',' , '),':',' -')
+		 FROM BillingMaster BM
+		 JOIN #DenialDescrp DXC ON BM.VisitNumber = DXC.VisitNumber AND BM.CPTCode = DXC.CPTCode
+		
+		EXEC sp_ClaimLevelStatusUpdate;
+
+		 EXEC LRNMaster.dbo.sp_SyncDenialCodes_FromLabTrackingMaster
+		 @SourceDb  = N'InHealthDTRLRN',
+		 @SinceDate = NULL;  -- full scan (safe, but heavier)
 
 		update ImportedFiles set FileStatus = 1,ProcessedOn = GETDATE()  where ImportedFileID = @FileId;
+
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
@@ -6755,12 +6749,12 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 -- Procedure to populate/update DenialMasterTable
-create     PROCEDURE [dbo].[sp_UpdateDenialMasterTable]
+CREATE     PROCEDURE [dbo].[sp_UpdateDenialMasterTable]
 AS
 BEGIN
     SET NOCOUNT ON;
     
-    -- Temporary table to hold parsed denial data with explicit collation
+      -- Temporary table to hold parsed denial data with explicit collation
     CREATE TABLE #TempDenials (
         DenialCode VARCHAR(50) COLLATE SQL_Latin1_General_CP1_CI_AS,
         DenialDescription NVARCHAR(1000) COLLATE SQL_Latin1_General_CP1_CI_AS
@@ -6774,12 +6768,12 @@ BEGIN
             -- Split PaymentReasonDescription by ';'
             [Desc].Item AS ParsedDescription,
             Code.ItemIndex
-        FROM DenialTrackingStaging DTS
+        FROM DenialTrackingMaster DTS
         CROSS APPLY dbo.SplitString(DTS.PaymentReasonCode, ';') Code
-        CROSS APPLY dbo.SplitString(DTS.PaymentReasonDescription, ';') [Desc]
+        CROSS APPLY dbo.SplitString(DTS.DenialDescription, ';') [Desc]
         WHERE Code.ItemIndex = [Desc].ItemIndex
             AND DTS.PaymentReasonCode IS NOT NULL
-            AND DTS.PaymentReasonDescription IS NOT NULL
+            AND DTS.DenialDescription IS NOT NULL
     ),
     CleanedDenials AS (
         SELECT 
@@ -6812,21 +6806,7 @@ BEGIN
     LEFT JOIN DenialMasterTable DMT ON TD.DenialCode = DMT.DenialCode COLLATE SQL_Latin1_General_CP1_CI_AS
     WHERE DMT.DenialMasterID IS NULL -- Not exists
     
-    PRINT 'Inserted ' + CAST(@@ROWCOUNT AS VARCHAR(10)) + ' new denial codes.'
-    
-    ---- Update existing denial codes with collation fix in WHERE clause
-    --UPDATE DMT
-    --SET 
-    --    DMT.DenialDescription = TD.DenialDescription,
-    --    DMT.ModifiedDate = GETDATE()
-    --FROM DenialMasterTable DMT
-    --INNER JOIN #TempDenials TD ON DMT.DenialCode COLLATE SQL_Latin1_General_CP1_CI_AS = TD.DenialCode
-    --WHERE ISNULL(DMT.DenialDescription COLLATE SQL_Latin1_General_CP1_CI_AS, '') 
-    --      <> ISNULL(TD.DenialDescription, '')
-    
-    --PRINT 'Updated ' + CAST(@@ROWCOUNT AS VARCHAR(10)) + ' existing denial codes.'
-    
-    -- Clean up
+
     DROP TABLE #TempDenials
     
     -- Show final result
