@@ -268,7 +268,7 @@ public class ImportFilesRepository : IImportFilesRepository
 	public async Task<List<ReportDownloadSts>> GetReportDownloadStslst()
 	{
 		const string query = "SELECT a.[ReportID],a.[ReportName],a.[ReportType],a.[ReportServerPath],a.[ReportStatus],a.[CreatedOn]," +
-			 "b.FileStatus, a.LogString FROM [dbo].[ReportDownloadSts] a WITH (NOLOCK) join FileStatuses b WITH (NOLOCK) on a.ReportStatus = b.FileStatusId";
+			 "b.FileStatus, a.LogString,CompletedOn FROM [dbo].[ReportDownloadSts] a WITH (NOLOCK) join FileStatuses b WITH (NOLOCK) on a.ReportStatus = b.FileStatusId";
 
 		using var connection = _context.CreateConnection();
 		var results = await connection.QueryAsync<ReportDownloadSts>(query);

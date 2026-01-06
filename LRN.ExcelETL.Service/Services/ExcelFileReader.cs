@@ -1,4 +1,9 @@
 ﻿using ClosedXML.Excel;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using Common.Logging;
 using LRN.DataLibrary.Repository.Interfaces;
 using LRN.ExcelToSqlETL.Core.Interface;
@@ -8,538 +13,521 @@ using System.Globalization;
 
 public class ExcelFileReader : IFileReader
 {
-	private static readonly ILoggerService _logger = new LogManagerService();
-	private static List<FileLog> ImportLog;
-	private static int _ImportFileId = 0;
-	private readonly IImportFilesRepository _importRepo;
+    private static readonly ILoggerService _logger = new LogManagerService();
 
-	public ExcelFileReader(
-		 IImportFilesRepository importRepo)
-	{
-		_importRepo = importRepo;
-		ImportLog = new List<FileLog>();
-	}
+    private readonly IImportFilesRepository _importRepo;
+    private readonly List<FileLog> _importLog = new();
 
-	public async Task<List<ExcelReadResult>> ReadAsync(Stream stream, ExcelSheetMapping mapping, int ImportFileId)
-	{
-		_ImportFileId = ImportFileId;
-		var result = mapping.UseDynamicSchema
-			? await ReadDynamicAsync(stream, mapping)
-			: await ReadMappedAsync(stream, mapping);
+    private int _importFileId;
 
-		await _importRepo.InsertFileLog(ImportLog);
-		return result;
-	}
+    public ExcelFileReader(IImportFilesRepository importRepo)
+    {
+        _importRepo = importRepo;
+    }
 
-	private async Task<List<ExcelReadResult>> ReadMappedAsync(Stream stream, ExcelSheetMapping mapping)
-	{
-		try
-		{
-			using var workbook = new XLWorkbook(stream);
-			var resultTable = CreateMappedTableSchema(mapping);
+    public async Task<List<ExcelReadResult>> ReadAsync(Stream stream, ExcelSheetMapping mapping, int importFileId)
+    {
+        _importFileId = importFileId;
+        _importLog.Clear();
 
-			int totalRows = 0;
-			int importedRows = 0;
-			int errorRows = 0;
+        var result = mapping.UseDynamicSchema
+            ? await ReadDynamicAsync(stream, mapping)
+            : await ReadMappedAsync(stream, mapping);
 
-			var worksheets = GetWorksheets(workbook, mapping);
-			bool isFailed = false;
-			foreach (var worksheet in worksheets)
-			{
-				try
-				{
-					int headerRowIndex = 1;
-					if (!mapping.UseSheetName)
-						headerRowIndex = FindHeaderRow(worksheet, mapping);
-					var headerMap = BuildHeaderMap(worksheet.Row(headerRowIndex));
+        if (_importLog.Count > 0)
+            await _importRepo.InsertFileLog(_importLog);
 
-					ValidateHeaders(headerMap, mapping);
+        return result;
+    }
 
-					PopulateTableRows(
-						worksheet,
-						headerRowIndex,
-						headerMap,
-						mapping,
-						resultTable,
-						worksheet.Name,
-						ref totalRows,
-						ref importedRows,
-						ref errorRows
-					);
-				}
-				catch (Exception ex)
-				{
-					_logger.Warn($"Skipping sheet '{worksheet.Name}' due to Upload Template mismatch: {ex.Message}");
-					ImportLog.Add(new FileLog { ImportFileId = _ImportFileId, LogType = "Warning", LogMessage = $"Skipping sheet '{worksheet.Name}' due to mismatch: {ex.Message}" });
-					isFailed = true;
-					break;
-				}
-			}
+    private async Task<List<ExcelReadResult>> ReadMappedAsync(Stream stream, ExcelSheetMapping mapping)
+    {
+        using var workbook = new XLWorkbook(stream);
+        var resultTable = CreateMappedTableSchema(mapping);
 
+        int totalRows = 0;
+        int importedRows = 0;
+        int errorRows = 0;
 
-			_logger.Info($"Finished reading mapped Excel. Total Rows: {totalRows}, Imported: {importedRows}, Errors: {errorRows}");
+        var worksheets = GetWorksheets(workbook, mapping);
 
+        bool isFailed = false;
 
-			ImportLog.Add(new FileLog { ImportFileId = _ImportFileId, LogType = "Info", LogMessage = $"Finished reading mapped Excel. Total Rows: {totalRows}, Imported: {importedRows}, Errors: {errorRows}" });
+        foreach (var worksheet in worksheets)
+        {
+            try
+            {
+                int headerRowIndex = 1;
+                if (!mapping.UseSheetName)
+                    headerRowIndex = FindHeaderRow(worksheet, mapping);
 
-			return new List<ExcelReadResult> {
-				new ExcelReadResult {
-					Data = resultTable,
-					TotalRows = totalRows,
-					ImportedRows = importedRows,
-					ErrorRows = errorRows,
-					IsFailedRead = isFailed
-				}
-			};
-		}
-		catch (Exception ex)
-		{
-			_logger.Error($"Error in ReadMappedAsync: {ex}");
+                var headerMap = BuildHeaderMap(worksheet.Row(headerRowIndex));
 
-			ImportLog.Add(new FileLog { ImportFileId = _ImportFileId, LogType = "Error", LogMessage = $"Error in ReadMappedAsync: {ex}" });
+                // Fail FAST if required columns are missing (skip file)
+                var missingRequired = GetMissingRequiredExcelColumns(headerMap, mapping);
+                if (missingRequired.Count > 0)
+                    throw new InvalidDataException($"Missing required column(s): {string.Join(", ", missingRequired)}");
 
-			return null;
-		}
-	}
+                // Log extra columns that are not in mapping JSON (do NOT fail file)
+                var extra = GetExtraExcelColumns(headerMap, mapping);
+                if (extra.Count > 0)
+                {
+                    var msg = $"Sheet '{worksheet.Name}' contains extra column(s) not in mapping JSON: {string.Join(", ", extra)}";
+                    _logger.Warn(msg);
+                    _importLog.Add(new FileLog { ImportFileId = _importFileId, LogType = "Warning", LogMessage = msg });
+                }
 
-	private async Task<List<ExcelReadResult>> ReadDynamicAsync(Stream stream, ExcelSheetMapping mapping)
-	{
-		try
-		{
-			using var workbook = new XLWorkbook(stream);
-			var combinedTable = new DataTable();
-			var columnSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-			int totalRows = 0;
+                PopulateTableRows(
+                    worksheet,
+                    headerRowIndex,
+                    headerMap,
+                    mapping,
+                    resultTable,
+                    worksheet.Name,
+                    ref totalRows,
+                    ref importedRows,
+                    ref errorRows
+                );
+            }
+            catch (Exception ex)
+            {
+                // One log entry only for template/header failures
+                var msg = $"Skipping file due to template/header mismatch in sheet '{worksheet.Name}': {ex.Message}";
+                _logger.Error(msg);
+                _importLog.Add(new FileLog { ImportFileId = _importFileId, LogType = "Error", LogMessage = msg });
 
-			var worksheets = GetWorksheets(workbook, mapping);
+                isFailed = true;
+                break;
+            }
+        }
 
-			foreach (var sheet in worksheets)
-			{
-				var headerRow = sheet.FirstRowUsed();
-				if (headerRow == null) continue;
+        var summary = isFailed
+            ? $"Excel read FAILED (mapped). Total Rows scanned: {totalRows}, Imported: {importedRows}, Errors: {errorRows}"
+            : $"Finished reading mapped Excel. Total Rows: {totalRows}, Imported: {importedRows}, Errors: {errorRows}";
 
-				foreach (var cell in headerRow.CellsUsed())
-				{
-					var header = cell.GetString().Trim();
-					if (!string.IsNullOrWhiteSpace(header))
-						columnSet.Add(header);
-				}
-			}
+        _logger.Info(summary);
+        _importLog.Add(new FileLog { ImportFileId = _importFileId, LogType = "Info", LogMessage = summary });
 
-			foreach (var col in columnSet)
-				combinedTable.Columns.Add(col);
+        return new List<ExcelReadResult> {
+            new ExcelReadResult {
+                Data = resultTable,
+                TotalRows = totalRows,
+                ImportedRows = importedRows,
+                ErrorRows = errorRows,
+                IsFailedRead = isFailed
+            }
+        };
+    }
 
-			if (mapping.UseSheetName)
-				combinedTable.Columns.Add("SheetName");
+    private async Task<List<ExcelReadResult>> ReadDynamicAsync(Stream stream, ExcelSheetMapping mapping)
+    {
+        try
+        {
+            using var workbook = new XLWorkbook(stream);
+            var combinedTable = new DataTable();
+            var columnSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            int totalRows = 0;
 
-			foreach (var sheet in worksheets)
-			{
-				var headerRow = sheet.FirstRowUsed();
-				if (headerRow == null) continue;
+            var worksheets = GetWorksheets(workbook, mapping);
 
-				var headerMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-				for (int col = 1; col <= headerRow.LastCellUsed().Address.ColumnNumber; col++)
-				{
-					var header = headerRow.Cell(col).GetString().Trim();
-					if (!string.IsNullOrWhiteSpace(header))
-						headerMap[header] = col;
-				}
+            foreach (var sheet in worksheets)
+            {
+                var headerRow = sheet.FirstRowUsed();
+                if (headerRow == null) continue;
 
-				for (int rowNum = headerRow.RowBelow().RowNumber(); rowNum <= sheet.LastRowUsed().RowNumber(); rowNum++)
-				{
-					totalRows++;
-					var row = sheet.Row(rowNum);
-					var newRow = combinedTable.NewRow();
+                foreach (var cell in headerRow.CellsUsed())
+                {
+                    var header = cell.GetString().Trim();
+                    if (!string.IsNullOrWhiteSpace(header))
+                        columnSet.Add(header);
+                }
+            }
 
-					foreach (var header in headerMap.Keys)
-					{
-						var colIndex = headerMap[header];
-						newRow[header] = row.Cell(colIndex).GetValue<string>();
-					}
+            foreach (var col in columnSet)
+                combinedTable.Columns.Add(col);
 
-					if (mapping.UseSheetName)
-						newRow["SheetName"] = sheet.Name;
+            if (mapping.UseSheetName)
+                combinedTable.Columns.Add("SheetName");
 
-					combinedTable.Rows.Add(newRow);
-				}
-			}
+            foreach (var sheet in worksheets)
+            {
+                var headerRow = sheet.FirstRowUsed();
+                if (headerRow == null) continue;
 
-			_logger.Info($"Finished reading dynamic Excel. Total Rows: {totalRows}");
+                var headerMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                var lastCol = headerRow.LastCellUsed()?.Address.ColumnNumber ?? 0;
 
-			ImportLog.Add(new FileLog { ImportFileId = _ImportFileId, LogType = "Info", LogMessage = $"Finished reading dynamic Excel. Total Rows: {totalRows}" });
+                for (int col = 1; col <= lastCol; col++)
+                {
+                    var header = headerRow.Cell(col).GetString().Trim();
+                    if (!string.IsNullOrWhiteSpace(header))
+                        headerMap[header] = col;
+                }
 
+                var firstDataRow = headerRow.RowBelow().RowNumber();
+                var lastRow = sheet.LastRowUsed()?.RowNumber() ?? firstDataRow - 1;
 
-			return new List<ExcelReadResult> {
-				new ExcelReadResult {
-					Data = combinedTable,
-					TotalRows = totalRows,
-					ImportedRows = totalRows,
-					ErrorRows = 0
-				}
-			};
-		}
-		catch (Exception ex)
-		{
-			_logger.Error($"Error in ReadDynamicAsync: {ex}");
+                for (int rowNum = firstDataRow; rowNum <= lastRow; rowNum++)
+                {
+                    totalRows++;
+                    var row = sheet.Row(rowNum);
+                    var newRow = combinedTable.NewRow();
 
-			ImportLog.Add(new FileLog { ImportFileId = _ImportFileId, LogType = "Error", LogMessage = $"Error in ReadMappedAsync: {ex}" });
+                    foreach (var header in headerMap.Keys)
+                    {
+                        var colIndex = headerMap[header];
+                        newRow[header] = row.Cell(colIndex).GetValue<string>();
+                    }
 
-			return null;
-		}
-	}
+                    if (mapping.UseSheetName)
+                        newRow["SheetName"] = sheet.Name;
 
-	private void PopulateTableRows(
-		IXLWorksheet worksheet,
-		int headerRowIndex,
-		Dictionary<string, int> headerMap,
-		ExcelSheetMapping mapping,
-		DataTable table,
-		string sheetName,
-		ref int totalRows,
-		ref int importedRows,
-		ref int errorRows)
-	{
-		for (int rowNum = headerRowIndex + 1; rowNum <= worksheet.LastRowUsed().RowNumber(); rowNum++)
-		{
-			totalRows++;
-			var row = worksheet.Row(rowNum);
-			var newRow = table.NewRow();
-			bool hasError = false;
+                    combinedTable.Rows.Add(newRow);
+                }
+            }
 
-			foreach (var colMap in mapping.Columns)
-			{
-				if (!headerMap.TryGetValue(colMap.ExcelColumn, out int colIndex)) continue;
+            var msg = $"Finished reading dynamic Excel. Total Rows: {totalRows}";
+            _logger.Info(msg);
+            _importLog.Add(new FileLog { ImportFileId = _importFileId, LogType = "Info", LogMessage = msg });
 
-				try
-				{
-					var cellValue = row.Cell(colIndex).GetValue<string>();
-					newRow[colMap.SqlColumn] = GetCellValue(cellValue, colMap.DataType);
-				}
-				catch (Exception ex)
-				{
-					hasError = true;
-					_logger.Warn($"Row {rowNum} in sheet '{sheetName}' has error in column '{colMap.ExcelColumn}': {ex.Message}");
+            return new List<ExcelReadResult> {
+                new ExcelReadResult {
+                    Data = combinedTable,
+                    TotalRows = totalRows,
+                    ImportedRows = totalRows,
+                    ErrorRows = 0
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            var msg = $"Error in ReadDynamicAsync: {ex}";
+            _logger.Error(msg);
+            _importLog.Add(new FileLog { ImportFileId = _importFileId, LogType = "Error", LogMessage = msg });
+            return null;
+        }
+    }
 
-					ImportLog.Add(new FileLog { ImportFileId = _ImportFileId, LogType = "Error", LogMessage = $"Row {rowNum} in sheet '{sheetName}' has error in column '{colMap.ExcelColumn}': {ex.Message}" });
+    private void PopulateTableRows(
+        IXLWorksheet worksheet,
+        int headerRowIndex,
+        Dictionary<string, int> headerMap,
+        ExcelSheetMapping mapping,
+        DataTable table,
+        string sheetName,
+        ref int totalRows,
+        ref int importedRows,
+        ref int errorRows)
+    {
+        // Precompute column lookups once (optimization)
+        var activeMappings = mapping.Columns
+            .Where(c => !string.IsNullOrWhiteSpace(c.ExcelColumn) && headerMap.ContainsKey(c.ExcelColumn))
+            .Select(c => new
+            {
+                ExcelColumn = c.ExcelColumn,
+                SqlColumn = c.SqlColumn,
+                DataType = c.DataType,
+                ColIndex = headerMap[c.ExcelColumn]
+            })
+            .ToList();
 
-				}
-			}
+        var lastRow = worksheet.LastRowUsed()?.RowNumber() ?? headerRowIndex;
 
-			if (mapping.UseSheetName)
-				newRow["SheetName"] = sheetName;
+        for (int rowNum = headerRowIndex + 1; rowNum <= lastRow; rowNum++)
+        {
+            totalRows++;
+            var row = worksheet.Row(rowNum);
+            var newRow = table.NewRow();
+            bool hasError = false;
 
-			if (hasError)
-			{
-				errorRows++;
-				continue;
-			}
+            foreach (var col in activeMappings)
+            {
+                try
+                {
+                    var cellValue = row.Cell(col.ColIndex).GetValue<string>();
+                    newRow[col.SqlColumn] = GetCellValue(cellValue, col.DataType);
+                }
+                catch (Exception ex)
+                {
+                    hasError = true;
 
-			table.Rows.Add(newRow);
-			importedRows++;
-		}
-	}
+                    var msg = $"Row {rowNum} in sheet '{sheetName}' has error in column '{col.ExcelColumn}': {ex.Message}";
+                    _logger.Warn(msg);
+                    _importLog.Add(new FileLog { ImportFileId = _importFileId, LogType = "Error", LogMessage = msg });
+                }
+            }
 
-	private List<IXLWorksheet> GetWorksheets(XLWorkbook workbook, ExcelSheetMapping mapping)
-	{
-		if (mapping == null || !mapping.UseSheetName)
-			return workbook.Worksheets.ToList();
+            if (mapping.UseSheetName)
+                newRow["SheetName"] = sheetName;
 
-		if (string.IsNullOrWhiteSpace(mapping.SheetName))
-			throw new Exception("UseSheetName is true, but SheetName is empty or missing.");
+            if (hasError)
+            {
+                errorRows++;
+                continue;
+            }
 
-		var names = mapping.SheetName
-			.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-			.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            table.Rows.Add(newRow);
+            importedRows++;
+        }
+    }
 
-		return workbook.Worksheets.Where(ws => names.Contains(ws.Name)).ToList();
-	}
+    private List<IXLWorksheet> GetWorksheets(XLWorkbook workbook, ExcelSheetMapping mapping)
+    {
+        if (mapping == null || !mapping.UseSheetName)
+            return workbook.Worksheets.ToList();
 
-	private DataTable CreateMappedTableSchema(ExcelSheetMapping mapping)
-	{
-		var table = new DataTable();
-		foreach (var col in mapping.Columns)
-		{
-			if (!table.Columns.Contains(col.SqlColumn))
-				table.Columns.Add(col.SqlColumn);
-		}
-		if (mapping.UseSheetName)
-			table.Columns.Add("SheetName");
+        if (string.IsNullOrWhiteSpace(mapping.SheetName))
+            throw new Exception("UseSheetName is true, but SheetName is empty or missing.");
 
-		return table;
-	}
+        var names = mapping.SheetName
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-	private Dictionary<string, int> BuildHeaderMap(IXLRow headerRow)
-	{
-		var headerMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-		var duplicates = new HashSet<string>();
+        return workbook.Worksheets.Where(ws => names.Contains(ws.Name)).ToList();
+    }
 
-		for (int col = 1; col <= headerRow.Worksheet.LastColumnUsed().ColumnNumber(); col++)
-		{
-			var header = headerRow.Cell(col).GetString().Trim();
-			if (string.IsNullOrWhiteSpace(header)) continue;
+    private DataTable CreateMappedTableSchema(ExcelSheetMapping mapping)
+    {
+        var table = new DataTable();
+        foreach (var col in mapping.Columns)
+        {
+            if (!table.Columns.Contains(col.SqlColumn))
+                table.Columns.Add(col.SqlColumn);
+        }
+        if (mapping.UseSheetName)
+            table.Columns.Add("SheetName");
 
-			if (!headerMap.TryAdd(header, col))
-				duplicates.Add(header);
-		}
+        return table;
+    }
 
-		if (duplicates.Any())
-		{
-			var msg = $"Duplicate header(s) found: {string.Join(", ", duplicates)}";
-			ImportLog.Add(new FileLog { ImportFileId = _ImportFileId, LogType = "Error", LogMessage = msg });
-			_logger.Error(msg);
-			throw new Exception(msg);
-		}
+    private Dictionary<string, int> BuildHeaderMap(IXLRow headerRow)
+    {
+        var headerMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var duplicates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-		return headerMap;
-	}
+        var lastCol = headerRow.LastCellUsed()?.Address.ColumnNumber
+                      ?? headerRow.Worksheet.LastColumnUsed()?.ColumnNumber() ?? 0;
 
-	// Columns that are NOT expected to exist in the Excel header row
-	// (because you fill them in code before bulk copy)
-	private static readonly HashSet<string> HeaderIgnoreSqlColumns =
-		new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-		{
-		"ImportedFileID"
+        for (int col = 1; col <= lastCol; col++)
+        {
+            var header = headerRow.Cell(col).GetString().Trim();
+            if (string.IsNullOrWhiteSpace(header)) continue;
+
+            if (!headerMap.TryAdd(header, col))
+                duplicates.Add(header);
+        }
+
+        if (duplicates.Count > 0)
+            throw new InvalidDataException($"Duplicate header(s) found: {string.Join(", ", duplicates)}");
+
+        return headerMap;
+    }
+
+    // SQL columns that are NOT expected to exist in the Excel header row
+    // (because you fill them in code before bulk copy)
+    private static readonly HashSet<string> HeaderIgnoreSqlColumns =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "ImportedFileID"
             // add more if needed: "CreatedOn", "CreatedBy", "UpdatedOn", etc.
         };
 
-	private void ValidateHeaders(Dictionary<string, int> headerMap, ExcelSheetMapping mapping)
-	{
-		// Only validate required columns that are expected to be present in the Excel header
-		var missing = mapping.Columns
-			.Where(c =>
-				c.Required &&
-				!string.IsNullOrWhiteSpace(c.ExcelColumn) &&
-				(string.IsNullOrWhiteSpace(c.SqlColumn) || !HeaderIgnoreSqlColumns.Contains(c.SqlColumn)) &&
-				!headerMap.ContainsKey(c.ExcelColumn))
-			.Select(c => c.ExcelColumn)
-			.ToList();
+    private List<string> GetMissingRequiredExcelColumns(Dictionary<string, int> headerMap, ExcelSheetMapping mapping)
+    {
+        return mapping.Columns
+            .Where(c =>
+                c.Required &&
+                !string.IsNullOrWhiteSpace(c.ExcelColumn) &&
+                (string.IsNullOrWhiteSpace(c.SqlColumn) || !HeaderIgnoreSqlColumns.Contains(c.SqlColumn)) &&
+                !headerMap.ContainsKey(c.ExcelColumn))
+            .Select(c => c.ExcelColumn.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(s => s)
+            .ToList();
+    }
 
-		if (missing.Any())
-		{
-			ImportLog.Add(new FileLog
-			{
-				ImportFileId = _ImportFileId,
-				LogType = "Error",
-				LogMessage = $"Missing required column(s): {string.Join(", ", missing)}"
-			});
+    private List<string> GetExtraExcelColumns(Dictionary<string, int> headerMap, ExcelSheetMapping mapping)
+    {
+        var expected = mapping.Columns
+            .Where(c =>
+                !string.IsNullOrWhiteSpace(c.ExcelColumn) &&
+                (string.IsNullOrWhiteSpace(c.SqlColumn) || !HeaderIgnoreSqlColumns.Contains(c.SqlColumn)))
+            .Select(c => c.ExcelColumn.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-			throw new Exception($"Missing required column(s): {string.Join(", ", missing)}");
-		}
-	}
+        return headerMap.Keys
+            .Where(h => !expected.Contains(h))
+            .OrderBy(s => s)
+            .ToList();
+    }
 
-	private int FindHeaderRow(IXLWorksheet worksheet, ExcelSheetMapping mapping, int scanLimit = 20)
-	{
-		try
-		{
-			// Only columns we expect to appear in Excel header
-			var expectedCols = mapping.Columns
-				.Where(c =>
-					!string.IsNullOrWhiteSpace(c.ExcelColumn) &&
-					(string.IsNullOrWhiteSpace(c.SqlColumn) || !HeaderIgnoreSqlColumns.Contains(c.SqlColumn)))
-				.ToList();
+    private int FindHeaderRow(IXLWorksheet worksheet, ExcelSheetMapping mapping, int scanLimit = 20)
+    {
+        // Only columns we expect to appear in Excel header
+        var expectedCols = mapping.Columns
+            .Where(c =>
+                !string.IsNullOrWhiteSpace(c.ExcelColumn) &&
+                (string.IsNullOrWhiteSpace(c.SqlColumn) || !HeaderIgnoreSqlColumns.Contains(c.SqlColumn)))
+            .Select(c => c.ExcelColumn.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
-			// If there’s nothing to detect, default to first row
-			if (!expectedCols.Any())
-				return 1;
+        // If there’s nothing to detect, default to first row
+        if (expectedCols.Count == 0)
+            return 1;
 
-			List<string> allFoundHeaders = new List<string>();
-			Dictionary<int, List<string>> rowHeaders = new Dictionary<int, List<string>>();
+        var rowHeaders = new Dictionary<int, List<string>>();
+        var allFoundHeaders = new List<string>();
 
-			// First pass: collect all potential header values from each row
-			for (int i = 1; i <= scanLimit; i++)
-			{
-				var row = worksheet.Row(i);
+        // collect potential header values from each row
+        for (int i = 1; i <= scanLimit; i++)
+        {
+            var row = worksheet.Row(i);
+            var cellValues = row.CellsUsed()
+                .Select(c => c.GetString().Trim())
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .ToList();
 
-				// CellsUsed() avoids scanning tons of empty cells
-				var cellValues = row.CellsUsed()
-					.Select(c => c.GetString().Trim())
-					.Where(v => !string.IsNullOrWhiteSpace(v))
-					.ToList();
+            rowHeaders[i] = cellValues;
+            allFoundHeaders.AddRange(cellValues);
+        }
 
-				rowHeaders[i] = cellValues;
-				allFoundHeaders.AddRange(cellValues);
-			}
+        // find the row that contains the most expected headers
+        int bestMatchRow = -1;
+        int bestMatchCount = 0;
 
-			// Second pass: look for the row that contains the most expected headers
-			int bestMatchRow = -1;
-			int bestMatchCount = 0;
+        for (int i = 1; i <= scanLimit; i++)
+        {
+            var cellValues = rowHeaders[i];
 
-			for (int i = 1; i <= scanLimit; i++)
-			{
-				var cellValues = rowHeaders[i];
+            int matches = expectedCols.Count(col =>
+                cellValues.Contains(col, StringComparer.OrdinalIgnoreCase));
 
-				int matches = expectedCols.Count(col =>
-					cellValues.Contains(col.ExcelColumn, StringComparer.OrdinalIgnoreCase));
+            if (matches > bestMatchCount)
+            {
+                bestMatchCount = matches;
+                bestMatchRow = i;
+            }
+        }
 
-				if (matches > bestMatchCount)
-				{
-					bestMatchCount = matches;
-					bestMatchRow = i;
-				}
-			}
+        // Require at least 70% of EXPECTED headers (ignoring ImportedFileID)
+        int threshold = (int)Math.Ceiling(expectedCols.Count * 0.7);
 
-			// Require at least 70% of EXPECTED headers (ignoring ImportedFileID)
-			int threshold = (int)Math.Ceiling(expectedCols.Count * 0.7);
+        if (bestMatchCount >= threshold)
+            return bestMatchRow;
 
-			if (bestMatchCount >= threshold)
-				return bestMatchRow;
+        // If no single row has enough matches, try combining consecutive rows (up to 3 rows)
+        for (int startRow = 1; startRow <= scanLimit - 1; startRow++)
+        {
+            var combinedHeaders = new List<string>();
 
-			// If no single row has enough matches, try combining consecutive rows (up to 3 rows)
-			for (int startRow = 1; startRow <= scanLimit - 1; startRow++)
-			{
-				var combinedHeaders = new List<string>();
+            for (int i = startRow; i <= Math.Min(startRow + 2, scanLimit); i++)
+                combinedHeaders.AddRange(rowHeaders[i]);
 
-				for (int i = startRow; i <= Math.Min(startRow + 2, scanLimit); i++)
-					combinedHeaders.AddRange(rowHeaders[i]);
+            int combinedMatches = expectedCols.Count(col =>
+                combinedHeaders.Contains(col, StringComparer.OrdinalIgnoreCase));
 
-				int combinedMatches = expectedCols.Count(col =>
-					combinedHeaders.Contains(col.ExcelColumn, StringComparer.OrdinalIgnoreCase));
+            if (combinedMatches >= threshold)
+                return startRow; // starting row of header block
+        }
 
-				if (combinedMatches >= threshold)
-					return startRow; // starting row of header block
-			}
+        // Identify missing fields (only from expectedCols)
+        var missingFields = expectedCols
+            .Where(col => !allFoundHeaders.Contains(col, StringComparer.OrdinalIgnoreCase))
+            .ToList();
 
-			// Identify missing fields (only from expectedCols)
-			var missingFields = expectedCols
-				.Where(col => !allFoundHeaders.Contains(col.ExcelColumn, StringComparer.OrdinalIgnoreCase))
-				.Select(col => col.ExcelColumn)
-				.ToList();
+        var foundFields = expectedCols
+            .Where(col => allFoundHeaders.Contains(col, StringComparer.OrdinalIgnoreCase))
+            .ToList();
 
-			var foundFields = expectedCols
-				.Where(col => allFoundHeaders.Contains(col.ExcelColumn, StringComparer.OrdinalIgnoreCase))
-				.Select(col => col.ExcelColumn)
-				.ToList();
+        var errorMessage =
+            $"Wrong Template uploaded - Template Headings not found in the top {scanLimit} rows. " +
+            $"Missing Fields:\n{string.Join("\n", missingFields.Select(f => $"• {f}"))}" +
+            $"\nAvailable fields: [{string.Join(", ", foundFields)}]\n" +
+            $"\nPlease ensure the Excel file has the correct column headers.";
 
-			var errorMessage =
-				$"Wrong Template uploaded - Template Headings not found in the top {scanLimit} rows. " +
-				$"Missing Fields:\n{string.Join("\n", missingFields.Select(f => $"• {f}"))}" +
-				$"\nAvailable fields: [{string.Join(", ", foundFields)}]\n" +
-				$"\nPlease ensure the Excel file has the correct column headers.";
+        throw new InvalidDataException(errorMessage);
+    }
 
-			ImportLog.Add(new FileLog
-			{
-				ImportFileId = _ImportFileId,
-				LogType = "Error",
-				LogMessage = errorMessage
-			});
+    public static object GetCellValue(string? cellValue, string expectedType)
+    {
+        if (string.IsNullOrWhiteSpace(cellValue))
+            return DBNull.Value;
 
-			throw new InvalidDataException($"No valid header row found. {errorMessage}");
-		}
-		catch (Exception ex)
-		{
-			var errorMessage = $"Exception during header row detection: {ex.Message}";
+        string value = cellValue.Trim();
+        string type = expectedType?.ToLowerInvariant() ?? "string";
 
-			ImportLog.Add(new FileLog
-			{
-				ImportFileId = _ImportFileId,
-				LogType = "Error",
-				LogMessage = errorMessage
-			});
+        return type switch
+        {
+            "string" => value,
 
-			throw new InvalidDataException($"Header detection failed: {ex.Message}", ex);
-		}
-	}
+            "int" or "integer" =>
+                int.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var intResult)
+                    ? intResult : DBNull.Value,
 
+            "double" or "decimal" =>
+                double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var doubleResult)
+                    ? doubleResult : DBNull.Value,
 
-	public static object GetCellValue(string? cellValue, string expectedType, int rowNum = -1, string columnName = null)
-	{
-		try
-		{
-			if (string.IsNullOrWhiteSpace(cellValue))
-				return DBNull.Value;
+            "datetime" or "date" =>
+                TryParseFlexibleDate_USOnly(value, out var dateResult)
+                    ? dateResult : DBNull.Value,
 
-			string value = cellValue.Trim();
-			string type = expectedType.ToLowerInvariant();
+            "bool" or "boolean" =>
+                bool.TryParse(value, out var boolResult)
+                    ? boolResult : DBNull.Value,
 
-			return type switch
-			{
-				"string" => value,
+            _ => value // return raw string for unknown type
+        };
+    }
 
-				"int" or "integer" =>
-					int.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var intResult)
-						? intResult : DBNull.Value,
+    private static readonly string[] UsOnlyFormats =
+    {
+        "MM/dd/yyyy", "M/d/yyyy",
+        "MM/dd/yy",   "M/d/yy",
+        "MM/dd/yyyy HH:mm:ss", "M/d/yyyy HH:mm:ss",
+        "MM/dd/yyyy h:mm tt",  "M/d/yyyy h:mm tt",
+        "MM/dd/yyyy h:mm:ss tt","M/d/yyyy h:mm:ss tt"
+    };
 
-				"double" or "decimal" =>
-					double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var doubleResult)
-						? doubleResult : DBNull.Value,
+    private static readonly string[] IsoFormats =
+    {
+        "yyyy-MM-dd",
+        "yyyy-MM-ddTHH:mm:ss",
+        "yyyy-MM-ddTHH:mm:ss.fff",
+        "yyyy-MM-ddTHH:mm:ss'Z'",
+        "yyyy-MM-ddTHH:mm:ss.fff'Z'"
+    };
 
-				"datetime" or "date" =>
-					TryParseFlexibleDate_USOnly(value, out var dateResult, rowNum, columnName)
-						? dateResult : DBNull.Value,
+    public static bool TryParseFlexibleDate_USOnly(string input, out DateTime date)
+    {
+        date = default;
+        if (string.IsNullOrWhiteSpace(input))
+            return false;
 
-				"bool" or "boolean" =>
-					bool.TryParse(value, out var boolResult)
-						? boolResult : DBNull.Value,
+        input = input.Trim();
 
-				_ => value // return raw string for unknown type
-			};
-		}
-		catch (Exception ex)
-		{
-			ImportLog.Add(new FileLog { ImportFileId = _ImportFileId, LogType = "Error", LogMessage = $"Error on importing row {rowNum}, column '{columnName}': {ex}" });
-			throw;
-		}
-	}
+        // 1) Excel serials (OADate)
+        if (double.TryParse(input, NumberStyles.Float, CultureInfo.InvariantCulture, out var serial)
+            && serial > 0 && serial < 60000)
+        {
+            date = DateTime.FromOADate(serial);
+            return true;
+        }
 
-	private static readonly string[] UsOnlyFormats =
-   {
-	"MM/dd/yyyy", "M/d/yyyy",
-	"MM/dd/yy",   "M/d/yy",
-	"MM/dd/yyyy HH:mm:ss", "M/d/yyyy HH:mm:ss",
-	"MM/dd/yyyy h:mm tt",  "M/d/yyyy h:mm tt",
-	"MM/dd/yyyy h:mm:ss tt","M/d/yyyy h:mm:ss tt"
-};
+        var us = new CultureInfo("en-US");
 
-	private static readonly string[] IsoFormats =
-	{
-	"yyyy-MM-dd",
-	"yyyy-MM-ddTHH:mm:ss",
-	"yyyy-MM-ddTHH:mm:ss.fff",
-	"yyyy-MM-ddTHH:mm:ss'Z'",
-	"yyyy-MM-ddTHH:mm:ss.fff'Z'"
-};
+        // 2) Strict ISO (unambiguous, any culture)
+        if (DateTime.TryParseExact(input, IsoFormats, CultureInfo.InvariantCulture,
+                                   DateTimeStyles.None, out date))
+            return true;
 
-	public static bool TryParseFlexibleDate_USOnly(string input, out DateTime date,
-		int rowNum = -1, string columnName = null)
-	{
-		date = default;
-		if (string.IsNullOrWhiteSpace(input))
-			return false;
+        // 3) Strict US month-first ONLY
+        if (DateTime.TryParseExact(input, UsOnlyFormats, us, DateTimeStyles.None, out date))
+            return true;
 
-		input = input.Trim();
-
-		// 1) Excel serials (OADate)
-		if (double.TryParse(input, NumberStyles.Float, CultureInfo.InvariantCulture, out var serial)
-			&& serial > 0 && serial < 60000)
-		{
-			date = DateTime.FromOADate(serial);
-			return true;
-		}
-
-		var us = new CultureInfo("en-US");
-
-		// 2) Strict ISO (unambiguous, any culture)
-		if (DateTime.TryParseExact(input, IsoFormats, CultureInfo.InvariantCulture,
-								   DateTimeStyles.None, out date))
-			return true;
-
-		// 3) Strict US month-first ONLY
-		if (DateTime.TryParseExact(input, UsOnlyFormats, us, DateTimeStyles.None, out date))
-			return true;
-
-		// 4) DO NOT fall back to general TryParse or en-GB.
-		//    If it didn’t match the allowed formats, fail.
-		if (rowNum != -1 && !string.IsNullOrWhiteSpace(columnName))
-		{
-			ImportLog.Add(new FileLog
-			{
-				ImportFileId = _ImportFileId,
-				LogType = "Error",
-				LogMessage = $"Date conversion failed at Row {rowNum}, Column '{columnName}' for value '{input}'"
-			});
-		}
-		return false;
-	}
-
-
+        // 4) DO NOT fall back to general TryParse or en-GB.
+        return false;
+    }
 }
