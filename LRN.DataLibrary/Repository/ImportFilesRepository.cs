@@ -232,17 +232,56 @@ public class ImportFilesRepository : IImportFilesRepository
 	//    }
 	//}
 
-	public async Task<List<ImportFileDto>> GetImportFilesAsync()
+	public async Task<List<ImportFileDto>> GetImportFilesAsync(bool isMasterImport = false)
 	{
-		const string query = @"SELECT a.ImportedFileID AS ImportedFileId, a.ImportFileName, b.FileTypeName, c.FileStatus AS FileStatusName,
-               a.ExcelRowCount, a.ImportedRowCount, a.ImportedOn, a.ProcessedOn, a.LabId, a.ImportFilePath, c.FileStatusId 
-        FROM ImportedFiles a WITH (NOLOCK)
-        JOIN ImportFilTypes b WITH (NOLOCK) ON a.FileType = b.FileTypeId
-        JOIN FileStatuses c WITH (NOLOCK) ON a.FileStatus = c.FileStatusId";
+		const string sql = @"
+				SELECT
+					a.ImportedFileID     AS ImportedFileId,
+					a.ImportFileName,
+					b.FileTypeName,
+					c.FileStatus         AS FileStatusName,
+					a.ExcelRowCount,
+					a.ImportedRowCount,
+					a.ImportedOn,
+					a.ProcessedOn,
+					a.LabId,
+					a.ImportFilePath,
+					c.FileStatusId
+				FROM dbo.ImportedFiles a WITH (NOLOCK)
+				JOIN dbo.ImportFilTypes b WITH (NOLOCK) ON a.FileType  = b.FileTypeId
+				JOIN dbo.FileStatuses  c WITH (NOLOCK) ON a.FileStatus = c.FileStatusId
+				WHERE b.IsMasterImport = @IsMasterImport
+				ORDER BY a.ImportedOn DESC;";
 
 		using var connection = _context.CreateConnection();
-		var results = await connection.QueryAsync<ImportFileDto>(query);
-		return results.ToList();
+		var results = await connection.QueryAsync<ImportFileDto>(sql, new { IsMasterImport = isMasterImport });
+		return results.AsList(); // slightly faster than ToList()
+	}
+
+
+	public async Task<List<ImportFileDto>> GetImportFilesAsync()
+	{
+		const string sql = @"
+				SELECT
+					a.ImportedFileID     AS ImportedFileId,
+					a.ImportFileName,
+					b.FileTypeName,
+					c.FileStatus         AS FileStatusName,
+					a.ExcelRowCount,
+					a.ImportedRowCount,
+					a.ImportedOn,
+					a.ProcessedOn,
+					a.LabId,
+					a.ImportFilePath,
+					c.FileStatusId
+				FROM dbo.ImportedFiles a WITH (NOLOCK)
+				JOIN dbo.ImportFilTypes b WITH (NOLOCK) ON a.FileType  = b.FileTypeId
+				JOIN dbo.FileStatuses  c WITH (NOLOCK) ON a.FileStatus = c.FileStatusId
+				ORDER BY a.ImportedOn DESC;";
+
+		using var connection = _context.CreateConnection();
+		var results = await connection.QueryAsync<ImportFileDto>(sql);
+		return results.AsList(); // slightly faster than ToList()
 	}
 
 	public async Task<List<ImportFileTypesDto>> GetImportFilesTypesAsync()

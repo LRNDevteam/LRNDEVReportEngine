@@ -111,6 +111,11 @@
       "FileType": 211
     },
     {
+      "FileIdentifier": "Denial Action Command",
+      "JsonMappingPath": "DenialCommentMaster.json",
+      "FileType": 212
+    },
+    {
       "FileIdentifier": "Bill Log by External Number Report",
       "JsonMappingPath": "BillLogbyExternalNumberReport.json",
       "FileType": 1802

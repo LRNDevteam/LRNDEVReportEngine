@@ -31,6 +31,10 @@
                     Reports
                 </a>
             }
+            <a href="@Url.Action("MasterImport", "Upload")"
+               class="nav-link @(currentAction == "MasterImport" && currentController == "Upload" ? "active" : "")">
+                Master Import
+            </a>
         </div>
 
         <!-- Center Section -->

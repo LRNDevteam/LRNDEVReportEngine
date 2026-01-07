@@ -3,13 +3,13 @@
   "TargetTable": "dbo.VisitAgaistAccessionStaging",
   "Columns": [
     {
-      "ExcelColumn": "Visit Number",
+      "ExcelColumn": "VisitNumber",
       "SqlColumn": "VisitNumber",
       "DataType": "string",
       "Required": false
     },
     {
-      "ExcelColumn": "Reference ID",
+      "ExcelColumn": "ReferenceID",
       "SqlColumn": "AccessionNo",
       "DataType": "string",
       "Required": false

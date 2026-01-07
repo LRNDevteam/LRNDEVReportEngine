@@ -1,6 +1,7 @@
 using ClosedXML.Excel;
 using Common.Logging;
 using DocumentFormat.OpenXml.Spreadsheet;
+using DocumentFormat.OpenXml.Wordprocessing;
 using LRN.DataLibrary.Repository.Interfaces;
 using LRN.ExcelGenerator;
 using LRN.ExcelToSqlETL.Core.Constants;
@@ -46,11 +47,53 @@ public class UploadController : Controller
 
 	public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
 	{
-		var result = await _importRepo.GetImportFilesAsync();
+		var result = await _importRepo.GetImportFilesAsync(false);
 		var files = new List<FileUpload>();
 		ViewBag.LabName = User.FindFirst("LabName")?.Value ?? "";
 
-		var importFileTypes = await _lookupRepo.GetImportFileTypesAsync();
+		var importFileTypes = await _lookupRepo.GetImportFileTypesAsync(false);
+		ViewBag.FileTypes = importFileTypes.Select(l => new SelectListItem
+		{
+			Text = l.FileTypeName,
+			Value = l.FileTypeId.ToString()
+		}).ToList();
+
+		foreach (var file in result)
+		{
+			files.Add(new FileUpload
+			{
+				ImportedFileId = file.ImportedFileId,
+				FileType = file.FileType,
+				ProcessedOn = file.ProcessedOn,
+				ImportedOn = file.ImportedOn,
+				ImportedRowCount = file.ImportedRowCount,
+				ExcelRowCount = file.ExcelRowCount,
+				FileStatus = file.FileStatus,
+				FileStatusName = file.FileStatusName,
+				FileTypeName = file.FileTypeName,
+				ImportFileName = file.ImportFileName,
+				ImportFilePath = file.ImportFilePath
+			});
+		}
+		int totalReports = files.Count;
+		ViewBag.CurrentPage = page;
+		ViewBag.TotalPages = (int)Math.Ceiling((double)totalReports / pageSize);
+		var pagedReports = files
+			.OrderByDescending(r => r.ImportedOn)
+			.Skip((page - 1) * pageSize)
+			.Take(pageSize)
+			.ToList();
+		return View(pagedReports);
+	}
+
+	[HttpGet]
+	public async Task<IActionResult> MasterImport(int page = 1, int pageSize = 10)
+	{
+		var result = await _importRepo.GetImportFilesAsync(true);
+		var files = new List<FileUpload>();
+		ViewBag.LabName = User.FindFirst("LabName")?.Value ?? "";
+
+		var importFileTypes = await _lookupRepo.GetImportFileTypesAsync(true);
 		ViewBag.FileTypes = importFileTypes.Select(l => new SelectListItem
 		{
 			Text = l.FileTypeName,
@@ -88,7 +131,7 @@ public class UploadController : Controller
 	[RequestSizeLimit(524288000)] // 500 MB
 	[RequestFormLimits(MultipartBodyLengthLimit = 524288000)]
 	[ValidateAntiForgeryToken]
-	public async Task<IActionResult> UploadFile(IFormFile file, string fileType)
+	public async Task<IActionResult> UploadFile(IFormFile file, string fileType, bool IsMasterImport = false)
 	{
 		try
 		{
@@ -134,8 +177,10 @@ public class UploadController : Controller
 			TempData["UploadSuccess"] = "false";
 			_logger.Error($"An error occurred while uploading the file: {ex.Message}", ex);
 		}
-
-		return RedirectToAction("Index");
+		if (IsMasterImport)
+			return RedirectToAction("MasterImport");
+		else
+			return RedirectToAction("Index");
 	}
 
 	public async Task<FileResult> DownloadImportLogs(int fileId)

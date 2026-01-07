@@ -21,6 +21,7 @@
 		<Content Remove="MapperJSON\COVE_LIS.json" />
 		<Content Remove="MapperJSON\Custom_Collection.json" />
 		<Content Remove="MapperJSON\DenailCodeMapper.json" />
+		<Content Remove="MapperJSON\DenialCommentMaster.json" />
 		<Content Remove="MapperJSON\DenialTrackingDetail.json" />
 		<Content Remove="MapperJSON\Diagnos_SampleLIS.json" />
 		<Content Remove="MapperJSON\InHealthLIS_mapping.json" />
@@ -68,6 +69,7 @@
 		<None Include="MapperJSON\Nexus_Scrupping_IHDTR.json" />
 		<None Include="MapperJSON\Order_LIS.json" />
 		<None Include="MapperJSON\PanelGroup.json" />
+		<None Include="MapperJSON\DenialCommentMaster.json" />
 		<None Include="MapperJSON\PanelMaster.json" />
 		<None Include="MapperJSON\PatientAgingbyDateofService.json" />
 		<None Include="MapperJSON\PaymentLogbyPatientReport.json" />

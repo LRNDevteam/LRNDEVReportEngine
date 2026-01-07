@@ -11,6 +11,7 @@ public interface IImportFilesRepository
 	Task ProcessImportFilesAsync(ImportFileDto file);
 	Task<ImportFileDto> AddImportFileAync(ImportFileDto file);
 	Task UpdateFileAsync(ImportFileDto file);
+	Task<List<ImportFileDto>> GetImportFilesAsync(bool isMasterImport);
 	Task<List<ImportFileDto>> GetImportFilesAsync();
 	Task<List<ImportFileTypesDto>> GetImportFilesTypesAsync();
 
@@ -32,4 +33,5 @@ public interface IImportFilesRepository
 
 
 	Task<List<DownloadReportType>> GetDownloadReportTypes();
+
 }
