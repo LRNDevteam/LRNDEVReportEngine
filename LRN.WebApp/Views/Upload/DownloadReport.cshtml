@@ -1,28 +1,79 @@
 ﻿@model IEnumerable<LRN.ExcelToSqlETL.Core.DtoModels.ReportDownloadSts>
 
 @{
-    ViewBag.Title = "Report Page";
+    ViewData["Title"] = "Download Report";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    string rptMsg = ViewBag.ReportMessage;
 }
 
 <style>
-    .filter-bar {
-        background-color: #eaeaea;
+    /*  .three h4 {
+                font-size: 20px;
+                font-weight: 500;
+                letter-spacing: 0;
+                line-height: 1.5em;
+                padding-bottom: 15px;
+                position: relative;
+                margin: 10px;
+                text-transform: uppercase;
+                color: #505050;
+                text-align: center;
+            }
+
+                .three h4:before {
+                    content: "";
+                    position: absolute;
+                    left: 0;
+                    bottom: 0;
+                    height: 5px;
+                    width: 55px;
+                    background-color: #111;
+                    right: 0;
+                    margin: 0 auto;
+                }
+
+                .three h4:after {
+                    content: "";
+                    position: absolute;
+                    left: 0;
+                    bottom: 2px;
+                    height: 1px;
+                    width: 95%;
+                    max-width: 255px;
+                    background-color: #333;
+                    right: 0;
+                    margin: 0 auto;
+                } */
+
+    .table-container {
+        background-color: white;
+        border-radius: 10px;
         padding: 20px;
-        border-radius: 8px;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        margin-top: 20px;
+    }
+
+    .filter-bar {
+        background-color: white;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
         margin-bottom: 20px;
     }
 
-    .table-container {
-        background-color: #fff;
-        padding: 15px;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    .small-button {
+        font-size: 12px;
+        padding: 5px 10px;
     }
 
-    .pagination {
-        justify-content: center;
+    .queued {
+        color: #d9840d;
+        font-weight: 600;
+    }
+
+    .error {
+        color: #d90d0d;
+        font-weight: 600;
+        margin-right: 8px;
     }
 
     #loader {
@@ -31,8 +82,8 @@
         z-index: 9999;
         top: 0;
         left: 0;
-        height: 100%;
         width: 100%;
+        height: 100%;
         background: rgba(255, 255, 255, 0.7);
         align-items: center;
         justify-content: center;
@@ -47,6 +98,15 @@
         animation: spin 1s linear infinite;
     }
 
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
 </style>
 
 <div id="loader"><div class="spinner"></div></div>
@@ -116,7 +176,7 @@
                             }
                             else
                             {
-                                using (Html.BeginForm("DownloadReportFile", "Upload", FormMethod.Post, new { @class = "d-inline" }))
+                                using (Html.BeginForm("DownloadReportFile", "Upload", FormMethod.Post, new { @class = "d-inline js-download-report-form", data_report_name = item.ReportName }))
                                 {
                                     @Html.AntiForgeryToken()
                                     @Html.Hidden("fileId", item.ReportID)
@@ -261,17 +321,62 @@
          });
      }
 
-    // Validate dropdown before allowing submit
-    document.getElementById("reportForm").addEventListener("submit", function (e) {
-        const reportType = document.getElementById("reportType").value;
-        if (!reportType) {
-            e.preventDefault();
+    // Helpers
+    const EXEC_SUMMARY_MSG = 'Please ensure you have generated production, collection, denial reports before you generate the Executive Summary';
+
+    function isExecutiveSummary(value) {
+        if (!value) return false;
+        const v = String(value).trim();
+        return /^(executive|excutive)\s*summary$/i.test(v) || /executive\s*summary/i.test(v) || /excutive\s*summary/i.test(v);
+    }
+
+    function showExecSummaryWarning(onOk) {
+        if (window.Swal && typeof Swal.fire === 'function') {
             Swal.fire({
-                icon: 'error',
-                title: 'Missing Report Type',
-                text: 'Please select a report type before generating.'
-            });
+                icon: 'warning',
+                title: 'Notice',
+                text: EXEC_SUMMARY_MSG,
+                confirmButtonText: 'OK',
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            }).then(() => onOk && onOk());
+        } else {
+            alert(EXEC_SUMMARY_MSG);
+            onOk && onOk();
+        }
+    }
+
+    // Validate dropdown before allowing submit (Generate)
+    document.getElementById("reportForm").addEventListener("submit", function (e) {
+        const ddl = document.getElementById("reportType");
+        const reportTypeValue = ddl ? ddl.value : "";
+        const reportTypeText = (ddl && ddl.selectedOptions && ddl.selectedOptions.length)
+            ? ddl.selectedOptions[0].text
+            : "";
+
+        if (!reportTypeValue) {
+            e.preventDefault();
+            if (window.Swal && typeof Swal.fire === 'function') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Missing Report Type',
+                    text: 'Please select a report type before generating.'
+                });
+            } else {
+                alert('Please select a report type before generating.');
+            }
+            return;
+        }
+
+        // Show warning for Executive Summary, then proceed after OK
+        if (isExecutiveSummary(reportTypeText) || isExecutiveSummary(reportTypeValue)) {
+            e.preventDefault();
+            const form = e.target;
+            showExecSummaryWarning(() => form.submit()); // form.submit() bypasses submit event (no recursion)
             return;
         }
     });
+
+
 </script>
+
