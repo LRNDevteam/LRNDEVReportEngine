@@ -23,9 +23,13 @@ namespace LRN.ExcelToSqlETL.Core.Constants
 		public static string DownloadFilePath { get; set; }
 		public static string ImportFilePath { get; set; }
 
+        public static string MasterFilesPath { get; set; }
+
+        public static string ArchiveFilesPath { get; set; }
 
 
-		public enum FileStatusEnum
+
+        public enum FileStatusEnum
 		{
 			[Description("Import Successful")]
 			ImportSuccess = 1,
@@ -81,11 +85,14 @@ namespace LRN.ExcelToSqlETL.Core.Constants
 
 			[Description("Client Billing Sheet")]
 			Client_Billing_Sheet = 11,
-			IATLISFile = 4060,
-			PCRCO_LIS = 4070,
+			IATLISFile = 111,
+			//PCRCO_LIS = 4070,
 
-			#region Cove        
-			[Description("LIS Raw Report")]
+            [Description("PCRCO_LIS")]
+            PCRCO_LIS = 444,
+
+            #region Cove        
+            [Description("LIS Raw Report")]
 			Cove_LIS_Report = 401,
 
 			[Description("Custom Collection Report")]
@@ -171,17 +178,48 @@ namespace LRN.ExcelToSqlETL.Core.Constants
 			[Description("Result Report by Received Date ")]
 			Result_Report_by_Received_Date = 1813,
 
-			#endregion
+            #endregion
 
 
-			#region LRN MASTER FILE TYPES
+            [Description("Supplement_LIS_Stagging")]
+            Supplement_LIS_Stagging = 222,
 
-			[Description("Denial_Code_Mapper")]
+            [Description("Supplement_Visit_Against_Accession")]
+            Supplement_Visit_Against_Accession = 333,
+
+
+            [Description("NexumPreprocessingData_AL")]
+            NexumPreprocessingData_AL = 334,
+
+            [Description("NexumClaimScrubblingData_AL")]
+            NexumClaimScrubblingData_AL = 335,
+
+            [Description("NexumPreprocessingData_CO")]
+            NexumPreprocessingData_CO = 336,
+
+            [Description("NexumClaimScrubblingData_CO")]
+            NexumClaimScrubblingData_CO = 337,
+
+            [Description("Suppliment_Custom_Collection")]
+            Suppliment_Custom_Collection = 221,
+
+
+            #region LRN MASTER FILE TYPES
+
+            [Description("Denial_Code_Mapper")]
 			Denial_Code_Mapper = 99901,
 
-			#endregion
 
-		}
+            [Description("CPT-FeeSchedule")]
+            CPTFeeSchedule = 20001,
+
+
+            [Description("InsuranceMaster")]
+            InsuranceMaster = 20002,
+
+            #endregion
+
+        }
 
 		public enum DownloadReportType
 		{

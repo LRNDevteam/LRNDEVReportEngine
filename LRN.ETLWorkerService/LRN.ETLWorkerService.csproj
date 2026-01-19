@@ -5,9 +5,11 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<UserSecretsId>dotnet-LRN.ETLWorkerService-69cdc67a-b8c9-4a9f-a06a-399e37e4bc3f</UserSecretsId>
+		<AssemblyName>PCRAL.ETLWorkerService</AssemblyName>
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Content Remove="log4net.config" />
 		<Content Remove="MapperJSON\AccPaymentReport.json" />
 		<Content Remove="MapperJSON\AdjustmentLogByDateofService.json" />
 		<Content Remove="MapperJSON\BillByCollectionDate.json" />
@@ -45,6 +47,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Include="log4net.config" />
 		<None Include="MapperJSON\AccPaymentReport.json" />
 		<None Include="MapperJSON\AdjustmentLogByDateofService.json" />
 		<None Include="MapperJSON\BillByCollectionDate.json" />
@@ -99,10 +102,18 @@
 		<ProjectReference Include="..\LRN.ExcelGenerator\LRN.ExcelGenerator.csproj" />
 		<ProjectReference Include="..\LRN.ExcelToSqlETL\LRN.ExcelToSqlETL.Core.csproj" />
 	</ItemGroup>
+	<ItemGroup>
+		<None Update="log4net.config">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
 
 	<ProjectExtensions>
 		<VisualStudio>
 			<UserProperties appsettings_1etl_1json__JsonSchema="https://www.schemastore.org/appsscript.json" />
 		</VisualStudio>
 	</ProjectExtensions>
+
+	
 </Project>

@@ -9,18 +9,31 @@ namespace Common.Logging
 		private static readonly object _sync = new();
 		private static bool _configured = false;
 
-		private static ILog Log
-		{
-			get
-			{
-				EnsureConfigured();
-				// IMPORTANT: create logger AFTER config, and bind to the SAME repository
-				var repo = log4net.LogManager.GetRepository(Assembly.GetEntryAssembly() ?? typeof(LogManagerService).Assembly);
-				return log4net.LogManager.GetLogger(repo.Name, typeof(LogManagerService));
-			}
-		}
+        //private static ILog Log
+        //{
+        //	get
+        //	{
+        //		EnsureConfigured();
+        //		// IMPORTANT: create logger AFTER config, and bind to the SAME repository
+        //		var repo = log4net.LogManager.GetRepository(Assembly.GetEntryAssembly() ?? typeof(LogManagerService).Assembly);
+        //		return log4net.LogManager.GetLogger(repo.Name, typeof(LogManagerService));
+        //	}
+        //}
 
-		private static void EnsureConfigured()
+        private static ILog Log
+        {
+            get
+            {
+                EnsureConfigured();
+                return log4net.LogManager.GetLogger(
+                    typeof(LogManagerService).Assembly,
+                    typeof(LogManagerService)
+                );
+            }
+        }
+
+
+        private static void EnsureConfigured()
 		{
 			if (_configured) return;
 
@@ -29,18 +42,38 @@ namespace Common.Logging
 				if (_configured) return;
 
 				var entryAsm = Assembly.GetEntryAssembly() ?? typeof(LogManagerService).Assembly;
-				var repo = log4net.LogManager.GetRepository(entryAsm);
+
+                var repo = log4net.LogManager.GetRepository(typeof(LogManagerService).Assembly);
+
+                //var repo = log4net.LogManager.GetRepository(entryAsm);
 
 				var configPath = Path.Combine(AppContext.BaseDirectory, "log4net.config");
-				if (!File.Exists(configPath))
-				{
-					// Optional: fallback to a minimal config so you still get something
-					// BasicConfigurator.Configure(repo);
-					_configured = true;
-					return;
-				}
+                //if (!File.Exists(configPath))
+                //{
+                //	// Optional: fallback to a minimal config so you still get something
+                //	// BasicConfigurator.Configure(repo);
+                //	_configured = true;
+                //	return;
+                //}
 
-				XmlConfigurator.ConfigureAndWatch(repo, new FileInfo(configPath));
+                if (!File.Exists(configPath))
+                {
+                    throw new FileNotFoundException(
+                        $"log4net.config not found at {configPath}"
+                    );
+                }
+                //File.WriteAllText(@"D:\LRN\Reports\logs\log4net_loaded.txt", "log4net.config loaded successfully at " + DateTime.Now);
+
+                //var logDir = @"D:\LRN\Reports\logs";
+                //Directory.CreateDirectory(logDir);
+
+                //File.WriteAllText(
+                //    Path.Combine(logDir, "log4net_loaded.txt"),
+                //    "log4net.config loaded successfully at " + DateTime.Now
+                //);
+
+
+                XmlConfigurator.ConfigureAndWatch(repo, new FileInfo(configPath));
 				_configured = true;
 			}
 		}
